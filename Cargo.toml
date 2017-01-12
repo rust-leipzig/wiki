@@ -1,0 +1,10 @@
+[package]
+name = "wiki"
+version = "0.1.0"
+
+[[bin]]
+name = "wiki"
+path = "src/main.rs"
+doc = false
+
+[dependencies]
