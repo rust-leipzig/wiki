@@ -22,3 +22,6 @@
 1. You have a collection of markdown files
 2. Generate static html partials from them
 3. Generate the indexes including their links
+
+## Meeting date at gitter
+We decided to meet every thursday at 21:00 on gitter.
