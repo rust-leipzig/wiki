@@ -8,3 +8,4 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
+markdown = "0.2"

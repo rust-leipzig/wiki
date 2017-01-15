@@ -1,10 +1,9 @@
+extern crate markdown;
 
 use std::str;
 use std::vec::Vec;
-use std::io::BufReader;
-use std::io::BufRead;
 use std::fs::File;
-
+use std::io::prelude::*;
 
 struct MD_FILES {
     rel_path_of_md_files: Vec<String>
@@ -34,14 +33,14 @@ impl MD_FILES {
         for md_file in self.rel_path_of_md_files.iter() {
             println!("parse file: {}", md_file);
 
-            let f = File::open(md_file).unwrap();
-            let file = BufReader::new(&f);
-            for (num, line) in file.lines().enumerate() {
-                let l = line.unwrap();
-                let n = num;
-                println!("{}>{}", n, l);
-            }
+            let mut f = File::open(md_file).unwrap();
+            let mut buffer = Vec::new();
 
+            f.read_to_end(&mut buffer).unwrap();
+
+            let md_str = str::from_utf8(&buffer).unwrap();
+
+            println!("{}", markdown::to_html(md_str));
         }
     }
 }
