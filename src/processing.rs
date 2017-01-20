@@ -22,7 +22,7 @@ impl Processing {
         self.paths.clear();
 
         /// Gather new content
-        let md_path = PathBuf::from(&directory).join("**/*.md");
+        let md_path = PathBuf::from(&directory).join("**").join("*.md");
 
         /// TODO: Error handling
         for entry in glob(md_path.to_str().unwrap()).expect("Failed to read glob pattern.") {
