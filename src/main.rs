@@ -3,56 +3,26 @@
 #![deny(missing_docs)]
 
 extern crate markdown;
-extern crate getopts;
 extern crate glob;
+#[macro_use]
+extern crate clap;
 
 pub mod processing;
 
-use getopts::{Options, Matches};
+use clap::App;
 use processing::Processing;
-use std::env;
 
-#[derive(Default)]
-struct ArgOptions {
-    args: Vec<String>,
-    usage: String,
-    matches: Option<Matches>
-}
-
-impl ArgOptions {
-    /// Parses arguments, the matches and creates the usage briefing
-    fn parse_args(&mut self) {
-        self.args = env::args().collect();
-        let mut opts = Options::new();
-
-        opts.optopt("d", "dir", "Path to the markdown directory.", "PATH");
-        opts.optflag("h", "help", "Print this help menu.");
-
-        self.matches = match opts.parse(&self.args[1..]) {
-            Ok(_match) => Some(_match),
-            Err(e) => panic!(e.to_string()),
-        };
-        let brief = format!("Usage: {} FILE [options]", self.args[0]);
-        self.usage = opts.usage(&brief);
-    }
-}
+static ARG_INPUT_DIRECTORY: &'static str = "INPUT";
+static ARG_OUTPUT_DIRECTORY: &'static str = "output-directory";
+static DEFAULT_HTML_DIR: &'static str = "./out";
 
 fn main() {
     // Parse the given arguments
-    let mut argopts = ArgOptions::default();
-    argopts.parse_args();
+    let yaml = load_yaml!("cli.yml");
+    let matches = App::from_yaml(yaml).get_matches();
 
-    let mut md_dir = String::new();
-    if let Some(matches) = argopts.matches {
-        if matches.opt_present("h") {
-            print!("{}", argopts.usage);
-            return;
-        }
-        match matches.opt_str("d") {
-            Some(_match) => md_dir.push_str(&_match),
-            None => {},
-        }
-    }
+    let md_dir = matches.value_of(ARG_INPUT_DIRECTORY).unwrap();
+    let html_dir = matches.value_of(ARG_OUTPUT_DIRECTORY).unwrap_or(DEFAULT_HTML_DIR);
 
     // Do first processing steps
     let mut processing = Processing::default();
