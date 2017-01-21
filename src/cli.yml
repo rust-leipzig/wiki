@@ -1,0 +1,15 @@
+name: wiki
+version: "0.1"
+author: Rust Leipzig
+about: Generates static HTML files based on markdown files.
+args:
+    - output-directory:
+        short: o
+        long: output-directory
+        value_name: PATH
+        help: The directory where the HTML output is generated.
+        takes_value: true
+    - INPUT:
+        help: The directory containing the markdown files to use.
+        required: true
+        index: 1
