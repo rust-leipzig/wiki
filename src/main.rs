@@ -6,6 +6,9 @@ extern crate markdown;
 extern crate glob;
 #[macro_use]
 extern crate clap;
+#[macro_use]
+extern crate log;
+extern crate mowl;
 
 pub mod processing;
 
@@ -25,8 +28,12 @@ fn main() {
 
     let md_dir = matches.value_of(ARG_INPUT_DIRECTORY).unwrap();
     let html_dir = matches.value_of(ARG_OUTPUT_DIRECTORY).unwrap_or(DEFAULT_HTML_DIR);
+
+    // Init logger crate
+    mowl::init().unwrap();
+
     // This can be deleted when html_dir is used further
-    println!("Output path: {}", html_dir);
+    debug!("Output path: {}", html_dir);
 
     // Do first processing steps
     let mut processing = Processing::default();
