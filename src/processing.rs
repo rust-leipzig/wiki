@@ -28,7 +28,7 @@ impl Processing {
         for entry in glob(md_path.to_str().unwrap()).expect("Failed to read glob pattern.") {
             match entry {
                 Ok(path) => self.paths.push(path),
-                Err(e) => panic!(e.to_string()),
+                Err(e) => error!("{}", e.to_string()),
             }
         }
     }
@@ -37,7 +37,7 @@ impl Processing {
     pub fn read_content_from_current_paths(&self) {
         // Iterate over all available paths
         for file in &self.paths {
-            println!("Parsing file: {}", file.display());
+            info!("Parsing file: {}", file.display());
 
             // Open the file and read its content
             match File::open(file) {
@@ -45,17 +45,18 @@ impl Processing {
                     let mut buffer = String::new();
                     // TODO: Error handling
                     file.read_to_string(&mut buffer).unwrap();
-                    println!("{}", to_html(&buffer));
+                    debug!("{}", to_html(&buffer));
                 }
-                Err(e) => println!("{}: {}", file.display(), e),
+                Err(e) => error!("{}: {}", file.display(), e),
             }
         }
     }
 
     /// Print absolute path of all added md files
     pub fn list_current_paths(&self) {
+        info!("Found the following markdown files:");
         for file in &self.paths {
-            println!("{:?}", file);
+            println!("    - {:?}", file);
         }
     }
 }
