@@ -49,9 +49,9 @@ fn run() -> Result<(), Box<WikiError>> {
     // Do first processing steps
     let mut processing = Processing::default();
 
-    try!(processing.read_from_directory(&md_dir));
+    processing.read_from_directory(&md_dir)?;
     processing.list_current_paths();
-    try!(processing.read_content_from_current_paths());
+    processing.read_content_from_current_paths()?;
     Ok(())
 }
 
@@ -61,3 +61,4 @@ fn main() {
         Err(retval) => error_and_exit(retval),
     }
 }
+
