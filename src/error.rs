@@ -1,5 +1,8 @@
 //! Everything related to wikis error handling
-use std::fmt;
+extern crate glob;
+
+use std::error::Error;
+use std::{fmt, io};
 
 #[derive(Default)]
 /// The global Error type for wiki
@@ -8,6 +11,8 @@ pub struct WikiError {
     pub code: ErrorType,
     /// A further description for the error
     pub description: String,
+    /// The cause for this error
+    pub cause: Option<Box<Error>>,
 }
 
 /// Representation of an error case
@@ -17,6 +22,7 @@ impl WikiError {
         WikiError {
             code: code,
             description: description.to_string(),
+            cause: None,
         }
     }
 }
@@ -27,33 +33,80 @@ impl fmt::Display for WikiError {
     }
 }
 
-macro_rules! return_if_not_ok {
-    ($retval:expr) => (
-        if $retval.code != ErrorType::Ok {
-            return $retval;
-        }
-    )
+impl fmt::Debug for WikiError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
 }
+
+impl Error for WikiError {
+    fn description(&self) -> &str {
+        &self.description
+    }
+}
+
+/*macro_rules! from_error {
+    ($err:ty, $err_v:ident, $err_t:path, $err_desc:expr) => {
+        impl From<$err> for WikiError {
+            fn from(err: $err) -> WikiError {
+                WikiError {
+                    code: $err_t,
+                    description: $err_desc,
+                    cause: Some(Box::new(err)),
+                }
+            }
+        }
+    }
+}*/
+
+impl From<io::Error> for WikiError {
+    fn from(err: io::Error) -> WikiError {
+        WikiError {
+            code: ErrorType::Other,
+            description: err.description().to_owned(),
+            cause: Some(Box::new(err)),
+        }
+    }
+}
+
+impl From<glob::GlobError> for WikiError {
+    fn from(err: glob::GlobError) -> WikiError {
+        WikiError {
+            code: ErrorType::GlobError,
+            description: String::from("Handling of glob module failed.").to_owned(),
+            cause: Some(Box::new(err)),
+        }
+    }
+}
+
+impl From<glob::PatternError> for WikiError {
+    fn from(err: glob::PatternError) -> WikiError {
+        WikiError {
+            code: ErrorType::Other,
+            description: String::from(err.msg).to_owned(),
+            cause: Some(Box::new(err)),
+        }
+    }
+}
+/*from_error!(io::Error, ErrorType::Other, String::from(err.description()).to_owned());
+from_error!(glob::GlobError, ErrorType::GlobError, String::from("Handling of glob module failed.").to_owned());
+from_error!(glob::PatternError, ErrorType::Other, String::from(err.msg).to_owned());*/
 
 #[derive(Debug, PartialEq)]
 /// Error codes as indicator what happened
 pub enum ErrorType {
     /// Everything worked fine
     Ok,
-    /// Failure while init process
-    InitFailure,
     /// The given path does not exist
     PathNotExisting,
-    /// The given path is not readable or accessible at all
-    PathNotReadable,
-    /// The given file can not be read in
-    FileNotReadable,
-    /// The conversion from file content to string failed
-    BufferStringifyFailed,
-    /// Something went wrong while conversion from markdown to HTML
-    HtmlConversionFailed,
-    /// An error without specific `ErrorType` occured
-    Unknown,
+    /// Handling of `glob` module failed
+    GlobError,
+    /// Pattern error while `glob` handling
+    PatternError,
+    /// Error within logging interface `mowl`
+    LoggerError,
+    /// An error not directly caused by `wiki` occured
+    Other,
 }
 
 impl Default for ErrorType {
