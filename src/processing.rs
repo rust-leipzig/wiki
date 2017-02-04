@@ -25,49 +25,37 @@ pub struct WikiResult {
 impl Processing {
     /// Reads all markdown files recursively from a given directory
     /// Clears the current available paths
-    pub fn read_from_directory(&mut self, directory: &str) -> WikiError {
+    pub fn read_from_directory(&mut self, directory: &str) -> Result<(), WikiError> {
         /// Remove all paths
         self.paths.clear();
 
         /// Gather new content
         let md_path = PathBuf::from(&directory).join("**").join("*.md");
         if Path::new(&directory).is_dir() == false {
-            return WikiError::new(ErrorType::PathNotExisting, &format!("The path '{}' does not exist", directory));
+            return Err(WikiError::new(ErrorType::PathNotExisting, &format!("The path '{}' does not exist", directory)));
         }
 
-        match glob(md_path.to_str().unwrap()) {
-            Ok(entries) => {
-                for entry in entries {
-                    match entry {
-                        Ok(path) => self.paths.push(path),
-                        Err(e) => return WikiError::new(ErrorType::PathNotReadable, &e.to_string()),
-                    }
-                }
-            },
-            Err(e) => return WikiError::new(ErrorType::FileNotReadable, e.msg),
+        /// Leave it as unwrap for now because of unimplemented Carrier trait
+        for entry in glob(md_path.to_str().unwrap())? {
+            let path = (entry)?;
+            self.paths.push(path);
         }
-        WikiError::new(ErrorType::Ok, "")
+        Ok(())
     }
 
     /// Read the content of all files and convert it to HTML
-    pub fn read_content_from_current_paths(&self) -> WikiError {
+    pub fn read_content_from_current_paths(&self) -> Result<(), WikiError> {
         // Iterate over all available paths
         for file in &self.paths {
             info!("Parsing file: {}", file.display());
 
             // Open the file and read its content
-            match File::open(file) {
-                Ok(mut file) => {
-                    let mut buffer = String::new();
-                    match file.read_to_string(&mut buffer) {
-                        Ok(_) => debug!("{}", to_html(&buffer)),
-                        Err(e) => return WikiError::new(ErrorType::BufferStringifyFailed, &e.to_string()),
-                    }
-                }
-                Err(e) => return WikiError::new(ErrorType::FileNotReadable , &e.to_string()),
-            }
+            let mut f = File::open(file)?;
+            let mut buffer = String::new();
+            f.read_to_string(&mut buffer)?;
+            debug!("{}", to_html(&buffer));
         }
-        WikiError::new(ErrorType::Ok, "")
+        Ok(())
     }
 
     /// Print absolute path of all added md files

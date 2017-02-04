@@ -22,12 +22,12 @@ static ARG_INPUT_DIRECTORY: &'static str = "INPUT";
 static ARG_OUTPUT_DIRECTORY: &'static str = "output-directory";
 static DEFAULT_HTML_DIR: &'static str = "output";
 
-fn error_and_exit(error: WikiError) {
+fn error_and_exit(error: Box<WikiError>) {
     error!("{}", error);
     exit(1);
 }
 
-fn run(mut retval: WikiError) -> WikiError {
+fn run() -> Result<(), Box<WikiError>> {
     // Parse the given arguments
     let matches = app_from_crate!()
         .arg(Arg::from_usage("-o --output-directory=[PATH] 'The directory where the HTML output is generated.'"))
@@ -40,10 +40,7 @@ fn run(mut retval: WikiError) -> WikiError {
     // Init logger crate
     match mowl::init() {
         Ok(_) => debug!("Mowl logging initiated."),
-        Err(_) => {
-            retval.code = ErrorType::InitFailure;
-            return retval;
-        },
+        Err(_) => return Err(Box::new(WikiError::new(ErrorType::LoggerError, "Initialization of mowl logger failed."))),
     }
 
     // This can be deleted when html_dir is used further
@@ -52,16 +49,15 @@ fn run(mut retval: WikiError) -> WikiError {
     // Do first processing steps
     let mut processing = Processing::default();
 
-    return_if_not_ok!(processing.read_from_directory(&md_dir));
+    try!(processing.read_from_directory(&md_dir));
     processing.list_current_paths();
-    return_if_not_ok!(processing.read_content_from_current_paths());
-    return retval;
+    try!(processing.read_content_from_current_paths());
+    Ok(())
 }
 
 fn main() {
-    let mut retval = WikiError::default();
-    retval = run(retval);
-    if retval.code != ErrorType::Ok {
-        error_and_exit(retval);
+    match run() {
+        Ok(_) => {},
+        Err(retval) => error_and_exit(retval),
     }
 }
