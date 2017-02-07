@@ -15,19 +15,21 @@ pub mod processing;
 
 use clap::Arg;
 use processing::Processing;
-use error::{WikiError, ErrorType};
+use error::{ErrorType, WikiResult};
 use std::process::exit;
 
 static ARG_INPUT_DIRECTORY: &'static str = "INPUT";
 static ARG_OUTPUT_DIRECTORY: &'static str = "output-directory";
 static DEFAULT_HTML_DIR: &'static str = "output";
 
-fn error_and_exit(error: Box<WikiError>) {
-    error!("{}", error);
-    exit(1);
+fn main() {
+    if let Err(error) = run() {
+        error!("{}", error);
+        exit(1);
+    }
 }
 
-fn run() -> Result<(), Box<WikiError>> {
+fn run() -> WikiResult<()> {
     // Parse the given arguments
     let matches = app_from_crate!()
         .arg(Arg::from_usage("-o --output-directory=[PATH] 'The directory where the HTML output is generated.'"))
@@ -40,7 +42,10 @@ fn run() -> Result<(), Box<WikiError>> {
     // Init logger crate
     match mowl::init() {
         Ok(_) => debug!("Mowl logging initiated."),
-        Err(_) => return Err(Box::new(WikiError::new(ErrorType::LoggerError, "Initialization of mowl logger failed."))),
+        Err(_) => {
+            bail!(ErrorType::LoggerError,
+                  "Initialization of mowl logger failed.")
+        }
     }
 
     // This can be deleted when html_dir is used further
@@ -49,16 +54,9 @@ fn run() -> Result<(), Box<WikiError>> {
     // Do first processing steps
     let mut processing = Processing::default();
 
-    processing.read_from_directory(&md_dir)?;
+    processing.read_from_directory(md_dir)?;
     processing.list_current_paths();
     processing.read_content_from_current_paths()?;
+
     Ok(())
 }
-
-fn main() {
-    match run() {
-        Ok(_) => {},
-        Err(retval) => error_and_exit(retval),
-    }
-}
-

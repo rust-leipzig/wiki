@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::io::prelude::*;
 use std::str;
 
-use error::{WikiError, ErrorType};
+use error::{ErrorType, WikiResult};
 
 #[derive(Default)]
 /// Global processing structure
@@ -16,23 +16,19 @@ pub struct Processing {
     paths: Vec<PathBuf>,
 }
 
-/// The global result type for wiki
-pub struct WikiResult {
-    /// The `WikiError` error type for the current result
-    pub error: WikiError
-}
-
 impl Processing {
-    /// Reads all markdown files recursively from a given directory
+    /// Reads all markdown files recursively from a given directory.
     /// Clears the current available paths
-    pub fn read_from_directory(&mut self, directory: &str) -> Result<(), WikiError> {
+    pub fn read_from_directory(&mut self, directory: &str) -> WikiResult<()> {
         /// Remove all paths
         self.paths.clear();
 
         /// Gather new content
         let md_path = PathBuf::from(&directory).join("**").join("*.md");
-        if Path::new(&directory).is_dir() == false {
-            return Err(WikiError::new(ErrorType::PathNotExisting, &format!("The path '{}' does not exist", directory)));
+        if !Path::new(&directory).is_dir() {
+            bail!(ErrorType::PathNotExisting,
+                  "The path '{}', does not exist",
+                  directory);
         }
 
         /// Leave it as unwrap for now because of unimplemented Carrier trait
@@ -40,11 +36,12 @@ impl Processing {
             let path = (entry)?;
             self.paths.push(path);
         }
+
         Ok(())
     }
 
     /// Read the content of all files and convert it to HTML
-    pub fn read_content_from_current_paths(&self) -> Result<(), WikiError> {
+    pub fn read_content_from_current_paths(&self) -> WikiResult<()> {
         // Iterate over all available paths
         for file in &self.paths {
             info!("Parsing file: {}", file.display());
@@ -55,6 +52,7 @@ impl Processing {
             f.read_to_string(&mut buffer)?;
             debug!("{}", to_html(&buffer));
         }
+
         Ok(())
     }
 
