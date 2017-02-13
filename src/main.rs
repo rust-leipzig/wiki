@@ -1,6 +1,10 @@
 //! # wiki
 #![deny(missing_docs)]
 
+#[cfg(test)]
+mod main_test;
+mod processing_test;
+
 extern crate markdown;
 extern crate glob;
 #[macro_use]
@@ -60,3 +64,4 @@ fn run() -> WikiResult<()> {
 
     Ok(())
 }
+

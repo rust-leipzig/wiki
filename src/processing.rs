@@ -1,4 +1,5 @@
 //! Everything related to the markdown processing
+
 use glob::glob;
 use markdown::to_html;
 
@@ -27,8 +28,7 @@ impl Processing {
         let md_path = PathBuf::from(&directory).join("**").join("*.md");
         if !Path::new(&directory).is_dir() {
             bail!(ErrorType::PathNotExisting,
-                  "The path '{}', does not exist",
-                  directory);
+                  "The path '{}' does not exist", directory);
         }
 
         /// Leave it as unwrap for now because of unimplemented Carrier trait
