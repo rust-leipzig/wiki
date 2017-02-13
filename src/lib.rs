@@ -1,4 +1,4 @@
-//! Everything related to the markdown processing
+//! The lib for markdown based static HTML wiki generation
 
 #[macro_use]
 extern crate log;

@@ -1,16 +1,16 @@
-//! # wiki
+//! The executable wiki for wikilib
 #![deny(missing_docs)]
 
 #[macro_use]
 extern crate clap;
 #[macro_use]
 extern crate log;
-extern crate wiki;
+extern crate wikilib;
 
 use clap::Arg;
-use wiki::Processing;
 use std::process::exit;
-use wiki::error::WikiResult;
+use wikilib::Processing;
+use wikilib::error::WikiResult;
 
 static ARG_INPUT_DIRECTORY: &'static str = "INPUT";
 static ARG_OUTPUT_DIRECTORY: &'static str = "output-directory";

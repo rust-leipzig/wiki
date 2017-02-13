@@ -1,13 +1,13 @@
-extern crate wiki;
+extern crate wikilib;
 
-use wiki::Processing;
-use wiki::error::ErrorType;
+use wikilib::Processing;
+use wikilib::error::ErrorType;
 
 #[test]
 fn test_read_from_directory() {
     let mut processing = Processing::default();
     assert!(processing.init_logging().is_ok());
-    assert!(processing.read_from_directory("test/example_md/real_md").is_ok());
+    assert!(processing.read_from_directory("tests/example_md/real_md").is_ok());
     assert!(processing.read_content_from_current_paths().is_ok());
 }
 
