@@ -1,5 +1,11 @@
 //! Everything related to the markdown processing
 
+#[macro_use]
+extern crate log;
+extern crate mowl;
+extern crate glob;
+extern crate markdown;
+
 use glob::glob;
 use markdown::to_html;
 
@@ -8,6 +14,8 @@ use std::path::{Path, PathBuf};
 use std::io::prelude::*;
 use std::str;
 
+#[macro_use]
+pub mod error;
 use error::{ErrorType, WikiResult};
 
 #[derive(Default)]
@@ -18,6 +26,20 @@ pub struct Processing {
 }
 
 impl Processing {
+    /// Creates a new instance of the processing lib
+    pub fn init_logging(&mut self) -> WikiResult<()> {
+        // Init logger crate
+        match mowl::init() {
+            Ok(_) => debug!("Mowl logging initiated."),
+            Err(_) => {
+                bail!(ErrorType::LoggerError,
+                      "Initialization of mowl logger failed.")
+            }
+        }
+
+        Ok(())
+    }
+
     /// Reads all markdown files recursively from a given directory.
     /// Clears the current available paths
     pub fn read_from_directory(&mut self, directory: &str) -> WikiResult<()> {

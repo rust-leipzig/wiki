@@ -1,20 +1,14 @@
-#[cfg(test)]
+extern crate wiki;
 
-use processing::Processing;
-#[allow(unused_imports)]
-use error::ErrorType;
+use wiki::Processing;
+use wiki::error::ErrorType;
 
 #[test]
 fn test_read_from_directory() {
     let mut processing = Processing::default();
-    match processing.read_from_directory("test/example_md/real_md") {
-        Ok(_) => {},
-        Err(e) => panic!(e.description),
-    }
-    match processing.read_content_from_current_paths() {
-        Ok(_) => {},
-        Err(e) => panic!("{}", e.to_string()),
-    }
+    assert!(processing.init_logging().is_ok());
+    assert!(processing.read_from_directory("test/example_md/real_md").is_ok());
+    assert!(processing.read_content_from_current_paths().is_ok());
 }
 
 #[test]
