@@ -1,22 +1,16 @@
-//! # wiki
+//! The executable wiki for wikilib
 #![deny(missing_docs)]
 
-extern crate markdown;
-extern crate glob;
 #[macro_use]
 extern crate clap;
 #[macro_use]
 extern crate log;
-extern crate mowl;
-
-#[macro_use]
-pub mod error;
-pub mod processing;
+extern crate wikilib;
 
 use clap::Arg;
-use processing::Processing;
-use error::{ErrorType, WikiResult};
 use std::process::exit;
+use wikilib::Processing;
+use wikilib::error::WikiResult;
 
 static ARG_INPUT_DIRECTORY: &'static str = "INPUT";
 static ARG_OUTPUT_DIRECTORY: &'static str = "output-directory";
@@ -39,24 +33,17 @@ fn run() -> WikiResult<()> {
     let md_dir = matches.value_of(ARG_INPUT_DIRECTORY).unwrap();
     let html_dir = matches.value_of(ARG_OUTPUT_DIRECTORY).unwrap_or(DEFAULT_HTML_DIR);
 
-    // Init logger crate
-    match mowl::init() {
-        Ok(_) => debug!("Mowl logging initiated."),
-        Err(_) => {
-            bail!(ErrorType::LoggerError,
-                  "Initialization of mowl logger failed.")
-        }
-    }
-
     // This can be deleted when html_dir is used further
     debug!("Output path: {}", html_dir);
 
     // Do first processing steps
     let mut processing = Processing::default();
 
+    processing.init_logging()?;
     processing.read_from_directory(md_dir)?;
     processing.list_current_paths();
     processing.read_content_from_current_paths()?;
 
     Ok(())
 }
+

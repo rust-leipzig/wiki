@@ -11,6 +11,9 @@ homepage = "https://github.com/rust-leipzig/wiki"
 documentation = "https://docs.rs/wiki"
 categories = ["command-line-utilities", "parsing"]
 
+[lib]
+name = "wikilib"
+
 [dependencies]
 glob = "0"
 markdown = "0"
