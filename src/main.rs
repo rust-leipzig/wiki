@@ -9,8 +9,7 @@ extern crate wikilib;
 
 use clap::Arg;
 use std::process::exit;
-use wikilib::Processing;
-use wikilib::error::WikiResult;
+use wikilib::{Wiki, WikiResult};
 
 static ARG_INPUT_DIRECTORY: &'static str = "INPUT";
 static ARG_OUTPUT_DIRECTORY: &'static str = "output-directory";
@@ -37,12 +36,12 @@ fn run() -> WikiResult<()> {
     debug!("Output path: {}", html_dir);
 
     // Do first processing steps
-    let mut processing = Processing::default();
+    let mut wiki = Wiki::new();
 
-    processing.init_logging()?;
-    processing.read_from_directory(md_dir)?;
-    processing.list_current_paths();
-    processing.read_content_from_current_paths()?;
+    wiki.init_logging()?;
+    wiki.read_from_directory(md_dir)?;
+    wiki.list_current_paths();
+    wiki.read_content_from_current_paths()?;
 
     Ok(())
 }

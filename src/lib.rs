@@ -15,17 +15,22 @@ use std::io::prelude::*;
 use std::str;
 
 #[macro_use]
-pub mod error;
-use error::{ErrorType, WikiResult};
+mod error;
+pub use error::{ErrorType, WikiResult};
 
 #[derive(Default)]
 /// Global processing structure
-pub struct Processing {
+pub struct Wiki {
     /// A collection of paths for the processing
     paths: Vec<PathBuf>,
 }
 
-impl Processing {
+impl Wiki {
+    /// Create a new `Wiki` instance
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Creates a new instance of the processing lib
     pub fn init_logging(&mut self) -> WikiResult<()> {
         // Init logger crate
@@ -53,13 +58,20 @@ impl Processing {
                   "The path '{}' does not exist", directory);
         }
 
-        /// Leave it as unwrap for now because of unimplemented Carrier trait
-        for entry in glob(md_path.to_str().unwrap())? {
-            let path = (entry)?;
-            self.paths.push(path);
+        /// Use the current working directory as a fallback
+        for entry in glob(md_path.to_str().unwrap_or("."))? {
+            self.paths.push(entry?);
         }
 
         Ok(())
+    }
+
+    /// Print absolute path of all added md files
+    pub fn list_current_paths(&self) {
+        info!("Found the following markdown files:");
+        for file in &self.paths {
+            println!("    - {:?}", file);
+        }
     }
 
     /// Read the content of all files and convert it to HTML
@@ -76,13 +88,5 @@ impl Processing {
         }
 
         Ok(())
-    }
-
-    /// Print absolute path of all added md files
-    pub fn list_current_paths(&self) {
-        info!("Found the following markdown files:");
-        for file in &self.paths {
-            println!("    - {:?}", file);
-        }
     }
 }
