@@ -1,0 +1,28 @@
+name: wiki
+author: The Rust Leipzig User Group
+about: Generates static HTML files based on markdown files
+after_help: 'More info at: https://github.com/rust-leipzig/wiki'
+global_settings:
+  - VersionlessSubcommands
+  - ColoredHelp
+
+args:
+  - input_directory:
+      default_value: .
+      help: The directory containing the markdown files to use
+      required: true
+      value_name: INPUT
+  - output_directory:
+      default_value: output
+      help: The directory where the HTML output is generated
+      long: output-directory
+      short: o
+      value_name: PATH
+  - verbose:
+      help: Set the verbosity level (maximum 4x `v`)
+      short: v
+      multiple: true
+  - www:
+      help: Enable integrated HTTP server to serve contents from output directory
+      long: www
+      short: w
