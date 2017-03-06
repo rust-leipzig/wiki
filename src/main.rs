@@ -22,7 +22,7 @@ use std::fs::metadata;
 
 static ARG_INPUT_DIRECTORY: &'static str = "INPUT";
 static ARG_OUTPUT_DIRECTORY: &'static str = "output-directory";
-static DEFAULT_HTML_DIR: &'static str = "output";
+static DEFAULT_HTML_DIR: &'static str = "html";
 
 fn main() {
     if let Err(error) = run() {
@@ -78,16 +78,13 @@ fn run() -> WikiResult<()> {
     let html_dir = matches.value_of(ARG_OUTPUT_DIRECTORY).unwrap_or(DEFAULT_HTML_DIR);
     let enable_httpd = matches.is_present("www");
 
-    // This can be deleted when html_dir is used further
-    debug!("Output path: {}", html_dir);
-
     // Do first processing steps
     let mut wiki = Wiki::new();
 
     wiki.init_logging()?;
     wiki.read_from_directory(md_dir)?;
     wiki.list_current_paths();
-    wiki.read_content_from_current_paths()?;
+    wiki.read_content_from_current_paths(html_dir)?;
 
     if enable_httpd {
         Iron::new(http_handler).http("localhost:5000").unwrap();
