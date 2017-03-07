@@ -9,8 +9,7 @@ extern crate markdown;
 use glob::glob;
 use markdown::to_html;
 
-use std::fs;
-use std::fs::File;
+use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::io::prelude::*;
 use std::str;
