@@ -7,9 +7,6 @@ extern crate iron;
 extern crate markdown;
 extern crate mowl;
 
-#[macro_use]
-mod error;
-
 use glob::glob;
 use log::LogLevel;
 use markdown::to_html;
@@ -17,9 +14,7 @@ use markdown::to_html;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::io::prelude::*;
-use std::path::{Path, PathBuf};
 use std::str;
-
 
 #[macro_use]
 mod error;
