@@ -2,6 +2,7 @@
 use std::error::Error;
 use std::{fmt, io};
 use glob;
+use iron::error::HttpError;
 
 /// Common Wiki Result type
 pub type WikiResult<T> = Result<T, WikiError>;
@@ -67,6 +68,7 @@ from_error! {
     io::Error,
     glob::GlobError,
     glob::PatternError,
+    HttpError,
 }
 
 #[derive(Debug, PartialEq)]
@@ -74,6 +76,9 @@ from_error! {
 pub enum ErrorType {
     /// Everything worked fine
     Ok,
+
+    /// A CLI parameter is missing
+    CliParameterMissing,
 
     /// The given path does not exist
     PathNotExisting,

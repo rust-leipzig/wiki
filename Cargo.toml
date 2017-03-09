@@ -17,7 +17,7 @@ name = "wikilib"
 [dependencies]
 glob = "0"
 markdown = "0"
-clap = "2"
+clap = { version = "2", features = ["yaml"] }
 log = "0"
 mowl = "1"
-iron = "0.4.*"
+iron = "0"
