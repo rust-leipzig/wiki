@@ -11,6 +11,10 @@ use glob::glob;
 use log::LogLevel;
 use markdown::to_html;
 
+use iron::prelude::*;
+use iron::status;
+use iron::headers::ContentType;
+
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::io::prelude::*;
