@@ -6,26 +6,25 @@ use log::LogLevel;
 use wikilib::{Wiki, ErrorType};
 
 use std::path::Path;
-use glob::glob;
 
 #[test]
 fn test_read_from_directory() {
     let mut wiki = Wiki::new();
     assert!(wiki.init_logging(LogLevel::Trace).is_ok());
-    assert!(wiki.read_from_directory("tests/example_md/real_md").is_ok());
-    assert!(wiki.read_content_from_current_paths("html").is_ok());
+    let input_dir = "tests/example_md/real_md";
+    assert!(wiki.read_from_directory(input_dir).is_ok());
+    assert!(wiki.read_content_from_current_paths(input_dir, "html").is_ok());
     assert!(Path::new("html").exists());
-    for entry in glob(Path::new("tests/example_md/real_md").join("*.md").to_str().unwrap()).unwrap() {
-        match entry {
-            Ok(path) => {
-                let mut stem = String::from(path.file_stem().unwrap().to_str().unwrap());
-                stem.push_str(".html");
-                let file_name = Path::new(stem.as_str());
-                let check_path = Path::new("html").join(file_name);
-                assert!(check_path.exists());
-            },
-            Err(_) => panic!("`entry` read from markdown directory not ok."),
-        }
+    let check_paths = vec![
+        "html/code.html",
+        "html/example1.html",
+        "html/subsection/test_s1.html",
+        "html/subsection/test_s2.html",
+        "html/test1.html",
+        "html/test2.html",
+    ];
+    for path in check_paths {
+        assert!(Path::new(path).exists());
     }
 }
 

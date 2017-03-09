@@ -15,8 +15,8 @@ use iron::prelude::*;
 use iron::status;
 use iron::headers::ContentType;
 
-use std::fs::{self, File};
-use std::path::{Path, PathBuf};
+use std::fs::{self, canonicalize, create_dir_all, File};
+use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use std::io::prelude::*;
 use std::str;
 
@@ -82,7 +82,8 @@ impl Wiki {
     }
 
     /// Read the content of all files and convert it to HTML
-    pub fn read_content_from_current_paths(&self, output_directory: &str) -> WikiResult<()> {
+    pub fn read_content_from_current_paths(&self, input_root_dir: &str,
+                                           output_directory: &str) -> WikiResult<()> {
         // Check whether output_directory exists, if not -> create
         if !Path::new(output_directory).exists() {
             info!("Creating directory for HMTL output: '{}'.", output_directory);
@@ -98,27 +99,47 @@ impl Wiki {
             let mut buffer = String::new();
             f.read_to_string(&mut buffer)?;
 
-
             // Creating the related HTML file in output_directory
-            let stem = file.file_stem()
-                .ok_or_else(|| {
-                    WikiError::new(ErrorType::StemError,
-                                   "Can not get stem of input file name")
-                })?;
-            match stem.to_str() {
-                Some(stem_str) => {
-                    let mut output_str: String = String::from(stem_str);
-                    output_str.push_str(".html");
+            match file.to_str() {
+                Some(file_str) => {
+                    // Get canonical normal forms of the input path and the recursively searched
+                    // directories
+                    let file_buf_n = canonicalize(&PathBuf::from(file_str))?;
+                    let file_str_n = String::from(file_buf_n.to_str().unwrap());
+                    let input_root_buf_n = canonicalize(&PathBuf::from(input_root_dir))?;
+                    let mut input_root_str_n = String::from(input_root_buf_n.to_str().unwrap());
+
+                    // Add native seperator to avoid getting the wrong path
+                    input_root_str_n.push(MAIN_SEPARATOR);
+
+                    // Reduce the input dir and replace the extension
+                    let output_str = String::from(file_str_n)
+                        .replace(input_root_str_n.as_str(), "")
+                        .replace(".md", ".html");
                     let output_path = Path::new(output_str.as_str());
+
+                    match output_path.parent() {
+                        Some(parent) => {
+                            // Creating folder structure if neccessary
+                            let parent_path = Path::new(output_directory)
+                                .join(parent.to_str().unwrap_or("."));
+                            create_dir_all(parent_path)?;
+                        },
+                        None => {
+                            bail!(ErrorType::Other,
+                                  "Can't get output path parent.");
+                        },
+                    }
+                    // Creating the ouput HTML file
                     let mut of = File::create(
                         PathBuf::from(&output_directory)
                             .join(output_path))?;
                     of.write(to_html(&buffer).as_bytes())?;
                 },
                 None => {
-                    bail!(ErrorType::StemError,
-                          "Can not stringfy stem");
-                },
+                    bail!(ErrorType::Other,
+                          "Can not stringfy file path");
+                }
             }
         }
 
