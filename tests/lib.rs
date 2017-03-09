@@ -1,5 +1,8 @@
+extern crate log;
 extern crate wikilib;
 extern crate glob;
+
+use log::LogLevel;
 use wikilib::{Wiki, ErrorType};
 
 use std::path::Path;
@@ -8,7 +11,7 @@ use glob::glob;
 #[test]
 fn test_read_from_directory() {
     let mut wiki = Wiki::new();
-    assert!(wiki.init_logging().is_ok());
+    assert!(wiki.init_logging(LogLevel::Trace).is_ok());
     assert!(wiki.read_from_directory("tests/example_md/real_md").is_ok());
     assert!(wiki.read_content_from_current_paths("html").is_ok());
     assert!(Path::new("html").exists());
