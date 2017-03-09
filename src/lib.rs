@@ -2,12 +2,18 @@
 
 #[macro_use]
 extern crate log;
-extern crate mowl;
 extern crate glob;
+extern crate iron;
 extern crate markdown;
+extern crate mowl;
 
 use glob::glob;
+use log::LogLevel;
 use markdown::to_html;
+
+use iron::prelude::*;
+use iron::status;
+use iron::headers::ContentType;
 
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
@@ -16,7 +22,7 @@ use std::str;
 
 #[macro_use]
 mod error;
-pub use error::{WikiError, ErrorType, WikiResult};
+pub use error::{ErrorType, WikiError, WikiResult};
 
 #[derive(Default)]
 /// Global processing structure
@@ -32,10 +38,10 @@ impl Wiki {
     }
 
     /// Creates a new instance of the processing lib
-    pub fn init_logging(&mut self) -> WikiResult<()> {
+    pub fn init_logging(&mut self, level: LogLevel) -> WikiResult<()> {
         // Init logger crate
-        match mowl::init() {
-            Ok(_) => debug!("Mowl logging initiated."),
+        match mowl::init_with_level(level) {
+            Ok(_) => info!("Log level set to: {}", level),
             Err(_) => {
                 bail!(ErrorType::LoggerError,
                       "Initialization of mowl logger failed.")
@@ -55,7 +61,8 @@ impl Wiki {
         let md_path = PathBuf::from(&directory).join("**").join("*.md");
         if !Path::new(&directory).is_dir() {
             bail!(ErrorType::PathNotExisting,
-                  "The path '{}' does not exist", directory);
+                  "The path '{}' does not exist",
+                  directory);
         }
 
         /// Use the current working directory as a fallback
@@ -114,6 +121,55 @@ impl Wiki {
                 },
             }
         }
+
+        Ok(())
+    }
+
+    /// Create an HTTP server serving the generated files
+    pub fn serve(&self, output_directory: &str) -> WikiResult<()> {
+        // Create a default listening address
+        let addr = "localhost:5000";
+        info!("Listening on {}", addr);
+
+        // Moving the data into the closure
+        let output_directory_string = output_directory.to_owned();
+
+        // Create a new iron instance
+        Iron::new(move |request: &mut Request| {
+                // The owned path needs to created from the cloned string
+                let mut path = PathBuf::from(output_directory_string.clone());
+
+                // Create the full path
+                for part in request.url.path() {
+                    path.push(part);
+                }
+
+                /* Could use some security validation for the path here. */
+
+                // Use a default page for the middleware
+                if path.is_dir() {
+                    path.push("index.html");
+                }
+
+                if !path.exists() {
+                    return Ok(Response::with(status::InternalServerError));
+                }
+
+                let mut f = match File::open(path) {
+                    Ok(v) => v,
+                    _ => return Ok(Response::with(status::NotFound)),
+                };
+
+                let mut buffer = String::new();
+                match f.read_to_string(&mut buffer) {
+                    Ok(v) => v,
+                    _ => return Ok(Response::with(status::InternalServerError)),
+                };
+
+                /* Content type needs to be determined from the file rather than assuming html */
+                Ok(Response::with((ContentType::html().0, status::Ok, buffer)))
+
+            }).http(addr)?;
 
         Ok(())
     }
