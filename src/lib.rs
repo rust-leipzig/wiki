@@ -105,9 +105,19 @@ impl Wiki {
                     // Get canonical normal forms of the input path and the recursively searched
                     // directories
                     let file_buf_n = canonicalize(&PathBuf::from(file_str))?;
-                    let file_str_n = String::from(file_buf_n.to_str().unwrap());
+                    let file_str_n = file_buf_n.to_str()
+                                     .ok_or_else(|| {
+                                         WikiError::new(ErrorType::Other,
+                                         "Unable to stringify canonical normal form of md-file.")
+                                     })?;
                     let input_root_buf_n = canonicalize(&PathBuf::from(input_root_dir))?;
-                    let mut input_root_str_n = String::from(input_root_buf_n.to_str().unwrap());
+                    let mut input_root_str_n = String::from(
+                        input_root_buf_n.to_str()
+                        .ok_or_else(|| {
+                            WikiError::new(ErrorType::Other,
+                            "Unable to stringify canonical normal form of input root.")
+                        })?
+                    );
 
                     // Add native seperator to avoid getting the wrong path
                     input_root_str_n.push(MAIN_SEPARATOR);
