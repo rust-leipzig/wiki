@@ -83,9 +83,6 @@ pub enum ErrorType {
     /// The given path does not exist
     PathNotExisting,
 
-    /// Unable to get filename stem for HTML output or handle its stringification
-    StemError,
-
     /// Error within logging interface `mowl`
     LoggerError,
 

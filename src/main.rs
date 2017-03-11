@@ -52,16 +52,13 @@ fn run() -> WikiResult<()> {
 
     let enable_httpd = matches.is_present("www");
 
-    // This can be deleted when `output_directory` is used further
-    debug!("Output path: {}", output_directory);
-
     // Do first processing steps
     let mut wiki = Wiki::new();
 
     wiki.init_logging(log_level)?;
     wiki.read_from_directory(input_directory)?;
     wiki.list_current_paths();
-    wiki.read_content_from_current_paths(output_directory)?;
+    wiki.read_content_from_current_paths(input_directory, output_directory)?;
 
     if enable_httpd {
         wiki.serve(output_directory)?;
