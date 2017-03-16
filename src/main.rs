@@ -21,6 +21,7 @@ fn main() {
     }
 }
 
+// The main running function
 fn run() -> WikiResult<()> {
     // Parse the given arguments
     let yaml = load_yaml!("cli.yml");
