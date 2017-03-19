@@ -1,13 +1,8 @@
 //! Everything related to the wikilib error handling
-#![allow(missing_docs)]
 
 use std::io;
 use glob;
 use iron::error::HttpError;
-
-mod errors {
-    error_chain!{}
-}
 
 error_chain! {
     foreign_links {
