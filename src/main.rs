@@ -28,6 +28,7 @@ fn main() {
     }
 }
 
+// The main running function
 fn run() -> Result<()> {
     // Parse the given arguments
     let yaml = load_yaml!("cli.yml");
@@ -36,10 +37,8 @@ fn run() -> Result<()> {
 
     // Set the verbosity level
     let log_level = match matches.occurrences_of("verbose") {
-        0 => LogLevel::Error,
-        1 => LogLevel::Warn,
-        2 => LogLevel::Info,
-        3 => LogLevel::Debug,
+        0 => LogLevel::Info, // Default value
+        1 => LogLevel::Debug,
         _ => LogLevel::Trace,
     };
 
