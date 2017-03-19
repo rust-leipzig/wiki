@@ -15,6 +15,7 @@ categories = ["command-line-utilities", "parsing"]
 name = "wikilib"
 
 [dependencies]
+error-chain = "0"
 glob = "0"
 markdown = "0"
 clap = { version = "2", features = ["yaml"] }
