@@ -3,7 +3,7 @@ extern crate wikilib;
 extern crate glob;
 
 use log::LogLevel;
-use wikilib::{Wiki, ErrorType};
+use wikilib::Wiki;
 
 use std::path::Path;
 
@@ -34,10 +34,7 @@ fn test_read_from_directory_panic() {
     let mut wiki = Wiki::new();
     match wiki.read_from_directory("_non-exisiting_") {
         Ok(_) => return,
-        Err(e) => {
-            assert_eq!(e.code, ErrorType::PathNotExisting);
-            panic!("`read_from_directory` returned ok, but directory should not exist.");
-        },
+        Err(_) => panic!("`read_from_directory` returned ok, but directory should not exist."),
     }
 }
 

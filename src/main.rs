@@ -5,9 +5,16 @@
 extern crate clap;
 #[macro_use]
 extern crate log;
+extern crate glob;
+extern crate iron;
 extern crate wikilib;
+#[macro_use]
+extern crate error_chain;
 
-use wikilib::{ErrorType, Wiki, WikiError, WikiResult};
+pub mod error;
+
+use wikilib::Wiki;
+use wikilib::error::*;
 
 use clap::App;
 use log::LogLevel;
@@ -22,7 +29,7 @@ fn main() {
 }
 
 // The main running function
-fn run() -> WikiResult<()> {
+fn run() -> Result<()> {
     // Parse the given arguments
     let yaml = load_yaml!("cli.yml");
     let app = App::from_yaml(yaml).version(crate_version!());
@@ -37,17 +44,11 @@ fn run() -> WikiResult<()> {
 
     // Get the input directory
     let input_directory = matches.value_of("input_directory")
-        .ok_or_else(|| {
-            WikiError::new(ErrorType::CliParameterMissing,
-                           "Input directory CLI parameter missing")
-        })?;
+        .ok_or_else(|| "CLI paramater 'input_directory' missing.")?;
 
     // Get the output directory
     let output_directory = matches.value_of("output_directory")
-        .ok_or_else(|| {
-            WikiError::new(ErrorType::CliParameterMissing,
-                           "Output directory CLI parameter missing")
-        })?;
+        .ok_or_else(|| "CLI paramater 'output_directory' missing.")?;
 
     let enable_httpd = matches.is_present("www");
 

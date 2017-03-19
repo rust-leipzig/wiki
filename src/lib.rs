@@ -6,7 +6,12 @@ extern crate glob;
 extern crate iron;
 extern crate markdown;
 extern crate mowl;
+#[macro_use]
+extern crate error_chain;
 
+pub mod error;
+
+use error::*;
 use glob::glob;
 use log::LogLevel;
 use markdown::to_html;
@@ -19,10 +24,6 @@ use std::fs::{self, canonicalize, create_dir_all, File};
 use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use std::io::prelude::*;
 use std::str;
-
-#[macro_use]
-mod error;
-pub use error::{ErrorType, WikiError, WikiResult};
 
 #[derive(Default)]
 /// Global processing structure
@@ -38,14 +39,11 @@ impl Wiki {
     }
 
     /// Creates a new instance of the processing lib
-    pub fn init_logging(&mut self, level: LogLevel) -> WikiResult<()> {
+    pub fn init_logging(&mut self, level: LogLevel) -> Result<()> {
         // Init logger crate
         match mowl::init_with_level(level) {
             Ok(_) => info!("Log level set to: {}", level),
-            Err(_) => {
-                bail!(ErrorType::LoggerError,
-                      "Initialization of mowl logger failed.")
-            }
+            Err(_) => bail!("Initialization of mowl logger failed."),
         }
 
         Ok(())
@@ -53,16 +51,14 @@ impl Wiki {
 
     /// Reads all markdown files recursively from a given directory.
     /// Clears the current available paths
-    pub fn read_from_directory(&mut self, directory: &str) -> WikiResult<()> {
+    pub fn read_from_directory(&mut self, directory: &str) -> Result<()> {
         /// Remove all paths
         self.paths.clear();
 
         /// Gather new content
         let md_path = PathBuf::from(&directory).join("**").join("*.md");
         if !Path::new(&directory).is_dir() {
-            bail!(ErrorType::PathNotExisting,
-                  "The path '{}' does not exist",
-                  directory);
+            bail!("The path '{}' does not exist", directory);
         }
 
         /// Use the current working directory as a fallback
@@ -83,7 +79,7 @@ impl Wiki {
 
     /// Read the content of all files and convert it to HTML
     pub fn read_content_from_current_paths(&self, input_root_dir: &str,
-                                           output_directory: &str) -> WikiResult<()> {
+                                           output_directory: &str) -> Result<()> {
         // Check whether output_directory exists, if not -> create
         if !Path::new(output_directory).exists() {
             info!("Creating directory for HMTL output: '{}'.", output_directory);
@@ -102,21 +98,15 @@ impl Wiki {
             // Creating the related HTML file in output_directory
             match file.to_str() {
                 Some(file_str) => {
-                    // Get canonical normal forms of the input path and the recursively searched
-                    // directories
+                    // Get canonical normal forms of the input path and the recursively
+                    // searched directories
                     let file_buf_n = canonicalize(&PathBuf::from(file_str))?;
                     let file_str_n = file_buf_n.to_str()
-                                     .ok_or_else(|| {
-                                         WikiError::new(ErrorType::Other,
-                                         "Unable to stringify canonical normal form of md-file.")
-                                     })?;
+                                     .ok_or_else(|| "Unable to stringify canonical normal form of md-file.")?;
                     let input_root_buf_n = canonicalize(&PathBuf::from(input_root_dir))?;
                     let mut input_root_str_n = String::from(
                         input_root_buf_n.to_str()
-                        .ok_or_else(|| {
-                            WikiError::new(ErrorType::Other,
-                            "Unable to stringify canonical normal form of input root.")
-                        })?
+                        .ok_or_else(|| "Unable to stringify canonical normal form of input root.")?
                     );
 
                     // Add native seperator to avoid getting the wrong path
@@ -135,21 +125,16 @@ impl Wiki {
                                 .join(parent.to_str().unwrap_or("."));
                             create_dir_all(parent_path)?;
                         },
-                        None => {
-                            bail!(ErrorType::Other,
-                                  "Can't get output path parent.");
-                        },
+                        None => bail!("Can't get output path parent."),
                     }
+
                     // Creating the ouput HTML file
                     let mut of = File::create(
                         PathBuf::from(&output_directory)
                             .join(output_path))?;
                     of.write(to_html(&buffer).as_bytes())?;
                 },
-                None => {
-                    bail!(ErrorType::Other,
-                          "Can not stringfy file path");
-                }
+                None => bail!("Can not stringfy file path"),
             }
         }
 
@@ -157,7 +142,7 @@ impl Wiki {
     }
 
     /// Create an HTTP server serving the generated files
-    pub fn serve(&self, output_directory: &str) -> WikiResult<()> {
+    pub fn serve(&self, output_directory: &str) -> Result<()> {
         // Create a default listening address
         let addr = "localhost:5000";
         info!("Listening on {}", addr);
