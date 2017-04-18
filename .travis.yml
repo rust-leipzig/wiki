@@ -44,6 +44,7 @@ addons:
     packages:
       - cmake
       - libcurl4-openssl-dev
+      - libiberty-dev
       - libelf-dev
       - libdw-dev
       - binutils-dev
