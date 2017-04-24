@@ -44,11 +44,11 @@ fn run() -> Result<()> {
 
     // Get the input directory
     let input_directory = matches.value_of("input_directory")
-        .ok_or_else(|| "CLI paramater 'input_directory' missing.")?;
+        .ok_or_else(|| "CLI parameter 'input_directory' missing.")?;
 
     // Get the output directory
     let output_directory = matches.value_of("output_directory")
-        .ok_or_else(|| "CLI paramater 'output_directory' missing.")?;
+        .ok_or_else(|| "CLI parameter 'output_directory' missing.")?;
 
     let enable_httpd = matches.is_present("www");
 
