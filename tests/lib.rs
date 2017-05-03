@@ -8,8 +8,8 @@ use wikilib::Wiki;
 use std::path::Path;
 use std::fs;
 
-static NON_EXISTING_DIR: &'static str = "_should_not_exist_";
-static TMP_DIR: &'static str = "_tmp_dir_";
+static NON_EXISTING_DIR: &str = "_should_not_exist_";
+static TMP_DIR: &str = "_tmp_dir_";
 
 #[test]
 fn test_read_from_directory() {

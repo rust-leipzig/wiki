@@ -4,7 +4,7 @@ use wikilib::error::*;
 use std::error::Error as StdError;
 use std::io;
 
-static ERROR_STR: &'static str = "Something went wrong here.";
+static ERROR_STR: &str = "Something went wrong here.";
 
 #[test]
 fn io_error_to_wiki_error() {
