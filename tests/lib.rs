@@ -6,6 +6,10 @@ use log::LogLevel;
 use wikilib::Wiki;
 
 use std::path::Path;
+use std::fs;
+
+static NON_EXISTING_DIR: &'static str = "_should_not_exist_";
+static TMP_DIR: &'static str = "_tmp_dir_";
 
 #[test]
 fn test_read_from_directory() {
@@ -26,15 +30,30 @@ fn test_read_from_directory() {
     for path in check_paths {
         assert!(Path::new(path).exists());
     }
+    println!("The following paths were found:");
+    wiki.list_current_paths();
 }
 
 #[test]
-#[should_panic]
-fn test_read_from_directory_panic() {
+fn test_read_from_non_existing_directory() {
     let mut wiki = Wiki::new();
-    match wiki.read_from_directory("_non-exisiting_") {
-        Ok(_) => return,
-        Err(_) => panic!("`read_from_directory` returned ok, but directory should not exist."),
+    if wiki.read_from_directory("_non-exisiting_").is_ok() {
+        panic!("`read_from_directory` returned ok, but directory should not exist.");
     }
 }
 
+#[test]
+fn test_read_non_existing_content() {
+    let mut wiki = Wiki::new();
+    if Path::new(TMP_DIR).exists() {
+        assert!(fs::remove_dir_all(TMP_DIR).is_ok());
+    }
+    assert!(fs::create_dir(TMP_DIR).is_ok());
+    assert!(fs::File::create(Path::new(TMP_DIR).join("test.md")).is_ok());
+    assert!(wiki.read_from_directory(TMP_DIR).is_ok());
+    assert!(fs::remove_dir_all(TMP_DIR).is_ok());
+    match wiki.read_content_from_current_paths(TMP_DIR, NON_EXISTING_DIR) {
+        Ok(_) => panic!("`read_content_from_current_paths` returned ok, but should fail."),
+        Err(_) => assert!(fs::remove_dir_all(NON_EXISTING_DIR).is_ok())
+    }
+}
