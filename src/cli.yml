@@ -9,20 +9,25 @@ global_settings:
 args:
   - input_directory:
       default_value: .
-      help: The directory containing the markdown files to use
+      help: The directory containing the markdown files to use.
       required: true
       value_name: INPUT
   - output_directory:
       default_value: output
-      help: The directory where the HTML output is generated
+      help: The directory where the HTML output is generated.
       long: output-directory
       short: o
       value_name: PATH
   - verbose:
-      help: Set the verbosity level (maximum 4x `v`)
+      help: Set the verbosity level (maximum 4x `v`).
       short: v
       multiple: true
   - www:
-      help: Enable integrated HTTP server to serve contents from output directory
+      help: Enable integrated HTTP server to serve contents from output directory.
       long: www
       short: w
+  - file_directory:
+      default_value: files
+      help: The directory where files are stored.
+      short: f
+      long: file-directory
