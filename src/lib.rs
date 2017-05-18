@@ -32,33 +32,6 @@ pub struct Wiki {
     paths: Vec<PathBuf>,
 }
 
-fn get_http_error_as_html(status: iron::status::Status) -> (iron::mime::Mime, iron::status::Status, &'static str) {
-
-    match status {
-        status::NotFound =>
-            (ContentType::html().0, status, "
-<html>
-    <head><title>404 Not Found</title></head>
-    <body>
-        <h1>Not found</h1>
-        <p>The requested page was not found on this server.</p>
-    </body>
-</html>
-"),
-
-        status::InternalServerError => (ContentType::html().0, status, "
-<html>
-    <head><title>500 Internal server error</title></head>
-    <body>
-        <h1>Internal server error</h1>
-    </body>
-</html>
-"),
-
-        _ => (ContentType::html().0, status, "")
-    }
-}
-
 impl Wiki {
     /// Create a new `Wiki` instance
     pub fn new() -> Self {
@@ -187,29 +160,30 @@ impl Wiki {
                     path.push(part);
                 }
 
-                /* Could use some security validation for the path here. */
+                // Could use some security validation for the path here.
 
                 // Use a default page for the middleware
                 if path.is_dir() {
                     path.push("index.html");
                 }
 
-                if !path.exists() {
-                    return Ok(Response::with(get_http_error_as_html(status::NotFound)));
-                }
-
                 let mut f = match File::open(path) {
                     Ok(v) => v,
-                    _ => return Ok(Response::with(get_http_error_as_html(status::NotFound))),
+                    _ => return Ok(Response::with((ContentType::html().0,
+                                                   status::NotFound,
+                                                   include_str!("html/404.html")))),
                 };
 
                 let mut buffer = String::new();
                 match f.read_to_string(&mut buffer) {
                     Ok(v) => v,
-                    _ => return Ok(Response::with(get_http_error_as_html(status::InternalServerError))),
+                    _ => return Ok(Response::with((ContentType::html().0,
+                                                   status::InternalServerError,
+                                                   include_str!("html/500.html")))),
                 };
 
-                /* Content type needs to be determined from the file rather than assuming html */
+                // Content type needs to be determined from the file rather
+                // than assuming html
                 Ok(Response::with((ContentType::html().0, status::Ok, buffer)))
 
             }).http(addr)?;

@@ -37,17 +37,12 @@ fn test_read_from_directory() {
 #[test]
 fn test_read_from_non_existing_directory() {
     let mut wiki = Wiki::new();
-    if wiki.read_from_directory("_non-exisiting_").is_ok() {
-        panic!("`read_from_directory` returned ok, but directory should not exist.");
-    }
+    assert!(wiki.read_from_directory("_non-exisiting_").is_err())
 }
 
 #[test]
 fn test_read_non_existing_content() {
     let mut wiki = Wiki::new();
-    if Path::new(TMP_DIR).exists() {
-        assert!(fs::remove_dir_all(TMP_DIR).is_ok());
-    }
     assert!(fs::create_dir(TMP_DIR).is_ok());
     assert!(fs::File::create(Path::new(TMP_DIR).join("test.md")).is_ok());
     assert!(wiki.read_from_directory(TMP_DIR).is_ok());
