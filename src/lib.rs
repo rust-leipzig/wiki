@@ -160,29 +160,30 @@ impl Wiki {
                     path.push(part);
                 }
 
-                /* Could use some security validation for the path here. */
+                // Could use some security validation for the path here.
 
                 // Use a default page for the middleware
                 if path.is_dir() {
                     path.push("index.html");
                 }
 
-                if !path.exists() {
-                    return Ok(Response::with(status::InternalServerError));
-                }
-
                 let mut f = match File::open(path) {
                     Ok(v) => v,
-                    _ => return Ok(Response::with(status::NotFound)),
+                    _ => return Ok(Response::with((ContentType::html().0,
+                                                   status::NotFound,
+                                                   include_str!("html/404.html")))),
                 };
 
                 let mut buffer = String::new();
                 match f.read_to_string(&mut buffer) {
                     Ok(v) => v,
-                    _ => return Ok(Response::with(status::InternalServerError)),
+                    _ => return Ok(Response::with((ContentType::html().0,
+                                                   status::InternalServerError,
+                                                   include_str!("html/500.html")))),
                 };
 
-                /* Content type needs to be determined from the file rather than assuming html */
+                // Content type needs to be determined from the file rather
+                // than assuming html
                 Ok(Response::with((ContentType::html().0, status::Ok, buffer)))
 
             }).http(addr)?;
