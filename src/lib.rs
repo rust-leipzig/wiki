@@ -28,8 +28,10 @@ use std::str;
 #[derive(Default)]
 /// Global processing structure
 pub struct Wiki {
-    /// A collection of paths for the processing
-    paths: Vec<PathBuf>,
+    /// A collection of input_paths for the processing
+    input_paths: Vec<PathBuf>,
+    /// The html output paths
+    output_paths: Vec<PathBuf>,
 }
 
 impl Wiki {
@@ -50,10 +52,10 @@ impl Wiki {
     }
 
     /// Reads all markdown files recursively from a given directory.
-    /// Clears the current available paths
+    /// Clears the current available input_paths
     pub fn read_from_directory(&mut self, directory: &str) -> Result<()> {
-        /// Remove all paths
-        self.paths.clear();
+        /// Remove all input_paths
+        self.input_paths.clear();
 
         /// Gather new content
         let md_path = PathBuf::from(&directory).join("**").join("*.md");
@@ -63,22 +65,22 @@ impl Wiki {
 
         /// Use the current working directory as a fallback
         for entry in glob(md_path.to_str().unwrap_or("."))? {
-            self.paths.push(entry?);
+            self.input_paths.push(entry?);
         }
 
         Ok(())
     }
 
     /// Print absolute path of all added md files
-    pub fn list_current_paths(&self) {
+    pub fn list_current_input_paths(&self) {
         info!("Found the following markdown files:");
-        for file in &self.paths {
+        for file in &self.input_paths {
             println!("    - {:?}", file);
         }
     }
 
     /// Read the content of all files and convert it to HTML
-    pub fn read_content_from_current_paths(&self, input_root_dir: &str,
+    pub fn read_content_from_current_paths(&mut self, input_root_dir: &str,
                                            output_directory: &str) -> Result<()> {
         // Check whether output_directory exists, if not -> create
         if !Path::new(output_directory).exists() {
@@ -86,8 +88,8 @@ impl Wiki {
             fs::create_dir(output_directory)?;
         }
 
-        // Iterate over all available paths
-        for file in &self.paths {
+        // Iterate over all available input_paths
+        for file in &self.input_paths {
             info!("Parsing file: {}", file.display());
 
             // Open the file and read its content
@@ -129,13 +131,37 @@ impl Wiki {
                     }
 
                     // Creating the ouput HTML file
-                    let mut of = File::create(
-                        PathBuf::from(&output_directory)
-                            .join(output_path))?;
-                    of.write(to_html(&buffer).as_bytes())?;
+                    let output_file_path = PathBuf::from(&output_directory)
+                                               .join(output_path);
+                    let mut output_file = File::create(output_file_path.to_owned())?;
+                    output_file.write(to_html(&buffer).as_bytes())?;
+                    self.output_paths.push(output_path.to_path_buf());
                 },
                 None => bail!("Can not stringfy file path"),
             }
+        }
+
+        Ok(())
+    }
+
+    /// Creates an index.html with simple tree structure view when no index.md was seen
+    pub fn create_index_tree(&self, output_directory: &str) -> Result<()> {
+        let index_path = Path::new(output_directory).join("index.html");
+        if !index_path.exists() {
+            info!("Creating index.html at {}",
+                  index_path.to_str().ok_or_else(|| "Unable to stringify index path.")?);
+            let mut index_file = File::create(index_path)?;
+            let mut index_str = String::from(include_str!("html/index.template.html"));
+            for output_path in &self.output_paths {
+                index_str.push_str(format!("<li><a href=\"{}\">{}</a></li>\n",
+                                           output_path.to_str()
+                                               .ok_or_else(|| "Unable to stringify output path.")?,
+                                           output_path.file_name()
+                                               .ok_or_else(|| "Unable to extract file name for path")?
+                                               .to_str().ok_or_else(|| "Unable to stringify output path.")?)
+                                   .as_str());
+            }
+            index_file.write_all(index_str.as_bytes())?;
         }
 
         Ok(())
