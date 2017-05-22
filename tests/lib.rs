@@ -17,7 +17,10 @@ fn test_read_from_directory() {
     assert!(wiki.init_logging(LogLevel::Trace).is_ok());
     let input_dir = "tests/example_md/real_md";
     assert!(wiki.read_from_directory(input_dir).is_ok());
+    let sha_file = Path::new("html").join(".files.sha");
+    assert!(fs::remove_file(&sha_file).is_ok());
     assert!(wiki.read_content_from_current_paths(input_dir, "html").is_ok());
+    assert!(sha_file.exists());
     assert!(Path::new("html").exists());
     let check_paths = vec![
         "html/code.html",
@@ -32,8 +35,19 @@ fn test_read_from_directory() {
     }
     println!("The following paths were found:");
     wiki.list_current_input_paths();
+    let index_file = Path::new("html").join("index.html");
+    assert!(fs::remove_file(&index_file).is_ok());
     assert!(wiki.create_index_tree("html").is_ok());
-    assert!(Path::new("html").join("index.html").exists());
+    assert!(index_file.exists());
+}
+
+#[test]
+fn test_sha_file_existing() {
+    let mut wiki = Wiki::new();
+    let sha_file = Path::new("html").join(".files.sha");
+    assert!(sha_file.exists());
+    let input_dir = "tests/example_md/real_md";
+    assert!(wiki.read_content_from_current_paths(input_dir, "html").is_ok());
 }
 
 #[test]
