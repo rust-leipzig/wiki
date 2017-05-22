@@ -31,7 +31,9 @@ fn test_read_from_directory() {
         assert!(Path::new(path).exists());
     }
     println!("The following paths were found:");
-    wiki.list_current_paths();
+    wiki.list_current_input_paths();
+    assert!(wiki.create_index_tree("html").is_ok());
+    assert!(Path::new("html").join("index.html").exists());
 }
 
 #[test]
