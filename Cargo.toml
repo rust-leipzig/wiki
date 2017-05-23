@@ -19,7 +19,7 @@ error-chain = "0"
 glob = "0"
 markdown = "0"
 clap = { version = "2", features = ["yaml"] }
-sha-1 = "0"
+uuid = { version = "0.5", features = ["v5"] }
 log = "0"
 mowl = "1"
 iron = "0"

@@ -3,25 +3,19 @@
 use InputPaths;
 use error::*;
 use std::fs::{self, File};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::io::{Write, Read, BufReader, BufRead};
-use sha_1::{Sha1, Digest};
+use uuid::{Uuid, NAMESPACE_DNS};
 
-pub struct Filehash {
-}
+pub struct Filehash;
 
 impl Filehash {
     /// Reads the file hash for the file specified by `file_str` out of `hash_file_str`
-    fn read_file_hash(hash_file_str: &str, file_str: &str) -> Option<(String)> {
-        let hash_file_res = File::open(hash_file_str);
-        if hash_file_res.is_err() {
-            return None;
-        }
-        let hash_file_reader = BufReader::new(hash_file_res.unwrap());
-        for line in hash_file_reader.lines() {
-            match line {
-                Ok(l) => {
-
+    fn read_file_hash(hash_file_str: &str, file_str: &str) -> Option<String> {
+        if let Ok(hash_file_res) = File::open(hash_file_str) {
+            let hash_file_reader = BufReader::new(hash_file_res);
+            for line in hash_file_reader.lines() {
+                if let Ok(l) = line {
                     // Break the line between `<hash>:<file>`
                     let sha_args: Vec<&str> = l.split(':').collect();
 
@@ -29,8 +23,7 @@ impl Filehash {
                     if sha_args[1] == file_str {
                         return Some(String::from(sha_args[0]));
                     }
-                },
-                Err(_) => {},
+                }
             }
         }
         None
@@ -60,22 +53,15 @@ impl Filehash {
 
     /// Calculate the hash of the given `file_str`
     fn get_file_hash(file_str: &str) -> Result<(String)> {
-        let mut sha1 = Sha1::default();
         let mut buffer = String::new();
-        let mut file_instance = File::open(PathBuf::from(file_str))?;
+        let mut file_instance = File::open(file_str)?;
 
         file_instance.read_to_string(&mut buffer)?;
 
-        sha1.input(buffer.as_bytes());
-        let file_hash = sha1.result();
+        let file_uuid = Uuid::new_v5(&NAMESPACE_DNS, buffer.as_str());
+        debug!("Calculated file hash: {}", file_uuid);
 
-        let mut hash_str = String::new();
-        for hash_byte in file_hash {
-            hash_str.push_str(format!("{:x}", hash_byte).as_str());
-        }
-        debug!("Calculated file hash: {}", hash_str);
-
-        Ok(hash_str)
+        Ok(file_uuid.to_string())
     }
 
     /// Checks whether the calculated hash of `file_str` is equal to the hash stored

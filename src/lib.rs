@@ -8,7 +8,7 @@ extern crate markdown;
 extern crate mowl;
 #[macro_use]
 extern crate error_chain;
-extern crate sha_1;
+extern crate uuid;
 
 pub mod error;
 pub mod filehash;
@@ -116,7 +116,6 @@ impl Wiki {
 
         // Iterate over all available input_paths
         for file in &mut self.input_paths {
-            info!("Parsing file: {}", file.path.display());
 
             // Open the file and read its content
             let mut f = File::open(&file.path)?;
@@ -165,9 +164,10 @@ impl Wiki {
                         Err(hash) => {
                             // Creating the ouput HTML file
                             file.hash = hash.to_string();
+                            info!("Parsing file: {}", file_str);
                             let output_file_path = PathBuf::from(&output_directory)
                                                        .join(output_path);
-                            let mut output_file = File::create(output_file_path.to_owned())?;
+                            let mut output_file = File::create(&output_file_path)?;
                             output_file.write(to_html(&buffer).as_bytes())?;
                         },
                     }
