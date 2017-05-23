@@ -11,6 +11,7 @@ extern crate error_chain;
 extern crate sha_1;
 
 pub mod error;
+pub mod filehash;
 
 use error::*;
 use glob::glob;
@@ -23,14 +24,13 @@ use iron::headers::ContentType;
 
 use std::fs::{self, canonicalize, create_dir_all, File};
 use std::path::{Path, PathBuf, MAIN_SEPARATOR};
-use std::io::BufReader;
 use std::io::prelude::*;
 use std::str;
-use sha_1::{Sha1, Digest};
+use filehash::Filehash;
 
 static SHA_FILE: &str = ".files.sha";
 
-struct InputPaths {
+pub struct InputPaths {
     path: PathBuf,
     hash: String,
 }
@@ -101,97 +101,6 @@ impl Wiki {
     }
 
 
-    /// Reads the file hash for the file specified by `file_str` out of `hash_file_str`
-    fn read_file_hash(hash_file_str: &str, file_str: &str) -> Option<(String)> {
-        let hash_file_res = File::open(hash_file_str);
-        if hash_file_res.is_err() {
-            return None;
-        }
-        let hash_file_reader = BufReader::new(hash_file_res.unwrap());
-        for line in hash_file_reader.lines() {
-            match line {
-                Ok(l) => {
-
-                    // Break the line between `<hash>:<file>`
-                    let sha_args: Vec<&str> = l.split(':').collect();
-
-                    // File matched
-                    if sha_args[1] == file_str {
-                        return Some(String::from(sha_args[0]));
-                    }
-                },
-                Err(_) => {},
-            }
-        }
-        None
-    }
-
-    /// Writes all input files and their hashes into the file `hash_file_str`
-    fn write_file_hash(&mut self, hash_file_str: &str) -> Result<()> {
-        // Renew the hash_file
-        if Path::new(hash_file_str).exists() {
-            fs::remove_file(hash_file_str)?;
-        }
-        let mut hash_file = File::create(hash_file_str)?;
-
-        // Write content into file in form `<hash>:<file>`
-        let mut hash_file_content = String::new();
-        for input_path in &self.input_paths {
-            hash_file_content.push_str(format!("{}:{}\n",
-                                               input_path.hash.as_str(),
-                                               input_path.path.to_str()
-                                               .ok_or_else(|| "Unable to stringfy input path.")?)
-                                       .as_str());
-        }
-        hash_file.write_all(hash_file_content.as_bytes())?;
-
-        Ok (())
-    }
-
-    /// Calculate the hash of the given `file_str`
-    fn get_file_hash(file_str: &str) -> Result<(String)> {
-        let mut sha1 = Sha1::default();
-        let mut buffer = String::new();
-        let mut file_instance = File::open(PathBuf::from(file_str))?;
-
-        file_instance.read_to_string(&mut buffer)?;
-
-        sha1.input(buffer.as_bytes());
-        let file_hash = sha1.result();
-
-        let mut hash_str = String::new();
-        for hash_byte in file_hash {
-            hash_str.push_str(format!("{:x}", hash_byte).as_str());
-        }
-        debug!("Calculated file hash: {}", hash_str);
-
-        Ok(hash_str)
-    }
-
-    /// Checks whether the calculated hash of `file_str` is equal to the hash stored
-    /// in the file `hash_file_str`
-    fn check_hash_currency(hash_file_str: &str, file_str: &str) -> Result<String> {
-        debug!("Check hash currency of '{}'", file_str);
-        let current_file_hash = Wiki::get_file_hash(file_str)?;
-        match Wiki::read_file_hash(hash_file_str, file_str) {
-            Some(stored_file_hash) => {
-                // Stored file hash was found
-                debug!("Extracted file hash:  {}", stored_file_hash);
-
-                // Calculated hash of current file equals stored hash?
-                if current_file_hash != stored_file_hash {
-                    return Err(Error::from(current_file_hash));
-                } else {
-                    return Ok(current_file_hash);
-                }
-            },
-            None => {
-                // No stored hash found for this file
-                return Err(Error::from(current_file_hash));
-            },
-        }
-    }
-
     /// Read the content of all files and convert it to HTML
     pub fn read_content_from_current_paths(&mut self, input_root_dir: &str,
                                            output_directory: &str) -> Result<()> {
@@ -247,7 +156,7 @@ impl Wiki {
                         None => bail!("Can't get output path parent."),
                     }
 
-                    match Wiki::check_hash_currency(sha_file, file_str) {
+                    match Filehash::check_hash_currency(sha_file, file_str) {
                         Ok(hash) => {
                             // File hash is up to date, no need to rebuild
                             file.hash = hash;
@@ -268,7 +177,7 @@ impl Wiki {
             }
         }
 
-        self.write_file_hash(sha_file)?;
+        Filehash::write_file_hash(&mut self.input_paths, sha_file)?;
 
         Ok(())
     }
