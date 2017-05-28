@@ -20,8 +20,13 @@ impl Filehash {
                     let sha_args: Vec<&str> = l.split(':').collect();
 
                     // File matched
-                    if sha_args[1] == file_str {
-                        return Some(String::from(sha_args[0]));
+                    if let Some(sha_arg_file) = sha_args.get(1) {
+                        if sha_arg_file != &file_str {
+                            continue;
+                        }
+                        if let Some(sha_arg_hash) = sha_args.get(0) {
+                            return Some(String::from(*sha_arg_hash));
+                        }
                     }
                 }
             }
