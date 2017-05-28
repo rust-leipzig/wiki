@@ -134,7 +134,7 @@ impl Wiki {
                     let output_file_path = PathBuf::from(&output_directory)
                                                .join(output_path);
                     let mut output_file = File::create(output_file_path.to_owned())?;
-                    output_file.write(to_html(&buffer).as_bytes())?;
+                    output_file.write_all(to_html(&buffer).as_bytes())?;
                     self.output_paths.push(output_path.to_path_buf());
                 },
                 None => bail!("Can not stringfy file path"),
