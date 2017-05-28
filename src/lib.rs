@@ -8,8 +8,10 @@ extern crate markdown;
 extern crate mowl;
 #[macro_use]
 extern crate error_chain;
+extern crate uuid;
 
 pub mod error;
+pub mod filehash;
 
 use error::*;
 use glob::glob;
@@ -24,12 +26,29 @@ use std::fs::{self, canonicalize, create_dir_all, File};
 use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use std::io::prelude::*;
 use std::str;
+use filehash::Filehash;
+
+static SHA_FILE: &str = ".files.sha";
+
+pub struct InputPaths {
+    path: PathBuf,
+    hash: String,
+}
+
+impl InputPaths {
+    fn new(path: &str) -> Self {
+        InputPaths {
+            path: PathBuf::from(path),
+            hash: String::new(),
+        }
+    }
+}
 
 #[derive(Default)]
 /// Global processing structure
 pub struct Wiki {
     /// A collection of input_paths for the processing
-    input_paths: Vec<PathBuf>,
+    input_paths: Vec<InputPaths>,
     /// The html output paths
     output_paths: Vec<PathBuf>,
 }
@@ -65,7 +84,9 @@ impl Wiki {
 
         /// Use the current working directory as a fallback
         for entry in glob(md_path.to_str().unwrap_or("."))? {
-            self.input_paths.push(entry?);
+            self.input_paths.push(
+                InputPaths::new(entry?.to_str()
+                                    .ok_or_else(|| "Unable to stringfy entry in markdown path.")?));
         }
 
         Ok(())
@@ -75,9 +96,10 @@ impl Wiki {
     pub fn list_current_input_paths(&self) {
         info!("Found the following markdown files:");
         for file in &self.input_paths {
-            println!("    - {:?}", file);
+            println!("    - {:?}", file.path);
         }
     }
+
 
     /// Read the content of all files and convert it to HTML
     pub fn read_content_from_current_paths(&mut self, input_root_dir: &str,
@@ -88,17 +110,20 @@ impl Wiki {
             fs::create_dir(output_directory)?;
         }
 
+        let sha_file_path = PathBuf::from(output_directory).join(SHA_FILE);
+        let sha_file = sha_file_path.to_str()
+                           .ok_or_else(|| "Unable to stringify the sha file path.")?;
+
         // Iterate over all available input_paths
-        for file in &self.input_paths {
-            info!("Parsing file: {}", file.display());
+        for file in &mut self.input_paths {
 
             // Open the file and read its content
-            let mut f = File::open(file)?;
+            let mut f = File::open(&file.path)?;
             let mut buffer = String::new();
             f.read_to_string(&mut buffer)?;
 
             // Creating the related HTML file in output_directory
-            match file.to_str() {
+            match file.path.to_str() {
                 Some(file_str) => {
                     // Get canonical normal forms of the input path and the recursively
                     // searched directories
@@ -130,16 +155,29 @@ impl Wiki {
                         None => bail!("Can't get output path parent."),
                     }
 
-                    // Creating the ouput HTML file
-                    let output_file_path = PathBuf::from(&output_directory)
-                                               .join(output_path);
-                    let mut output_file = File::create(output_file_path.to_owned())?;
-                    output_file.write_all(to_html(&buffer).as_bytes())?;
+                    match Filehash::check_hash_currency(sha_file, file_str) {
+                        Ok(hash) => {
+                            // File hash is up to date, no need to rebuild
+                            file.hash = hash;
+                            debug!("File '{}' hash up to date.", file_str);
+                        },
+                        Err(hash) => {
+                            // Creating the ouput HTML file
+                            file.hash = hash.to_string();
+                            info!("Parsing file: {}", file_str);
+                            let output_file_path = PathBuf::from(&output_directory)
+                                                       .join(output_path);
+                            let mut output_file = File::create(&output_file_path)?;
+                            output_file.write_all(to_html(&buffer).as_bytes())?;
+                        },
+                    }
                     self.output_paths.push(output_path.to_path_buf());
                 },
                 None => bail!("Can not stringfy file path"),
             }
         }
+
+        Filehash::write_file_hash(&mut self.input_paths, sha_file)?;
 
         Ok(())
     }
