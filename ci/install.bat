@@ -1,4 +1,4 @@
-ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-nightly-${env:TARGET}.exe"
+curl -sSf https://static.rust-lang.org/dist/rust-nightly-${env:TARGET}.exe -o rust-nightly-%TARGET%.exe
 
 rust-nightly-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
 
