@@ -10,5 +10,5 @@ environment:
 
 build: false
 
-install: . ./ci/install.bat
-test_script: . ./ci/test_script.bat
+install: .\ci\install.bat
+test_script: .\ci\test_script.bat
