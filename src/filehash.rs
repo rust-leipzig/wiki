@@ -81,14 +81,14 @@ impl Filehash {
 
                 // Calculated hash of current file equals stored hash?
                 if current_file_hash != stored_file_hash {
-                    return Err(Error::from(current_file_hash));
+                    Err(Error::from(current_file_hash))
                 } else {
-                    return Ok(current_file_hash);
+                    Ok(current_file_hash)
                 }
             },
             None => {
                 // No stored hash found for this file
-                return Err(Error::from(current_file_hash));
+                Err(Error::from(current_file_hash))
             },
         }
     }

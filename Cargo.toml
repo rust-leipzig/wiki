@@ -15,11 +15,12 @@ categories = ["command-line-utilities", "parsing"]
 name = "wikilib"
 
 [dependencies]
+clap = { version = "2", features = ["yaml"] }
+clippy = {version = "*", optional = true}
 error-chain = "0"
 glob = "0"
-markdown = "0"
-clap = { version = "2", features = ["yaml"] }
-uuid = { version = "0.5", features = ["v5"] }
-log = "0"
-mowl = "1"
 iron = "0"
+log = "0"
+markdown = "0"
+mowl = "1"
+uuid = { version = "0.5", features = ["v5"] }
