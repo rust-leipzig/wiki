@@ -31,8 +31,7 @@ use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use std::io::prelude::*;
 use std::str;
 use filehash::Filehash;
-use std::ops::Deref;
-use rayon::iter::{ParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator};
+use rayon::iter::{ParallelIterator, IntoParallelRefMutIterator};
 
 static SHA_FILE: &str = ".files.sha";
 
@@ -113,7 +112,6 @@ impl InputPaths {
             },
             None => bail!("Can not stringfy file path"),
         }
-        Err(Error::from("nope"))
     }
 }
 
@@ -177,6 +175,10 @@ impl Wiki {
     /// Read the content of all files and convert it to HTML
     pub fn read_content_from_current_paths(&mut self, input_root_dir: &str,
                                            output_directory: &str) -> Result<()> {
+        if fs::read_dir(input_root_dir)?.count() == 0 {
+            return Err(Error::from("No files given in input paths"));
+        }
+
         // Check whether output_directory exists, if not -> create
         if !Path::new(output_directory).exists() {
             info!("Creating directory for HMTL output: '{}'.", output_directory);
