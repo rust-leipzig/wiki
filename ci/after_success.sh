@@ -4,10 +4,6 @@
 
 env
 
-if [[ "$TRAVIS_RUST_VERSION" == "stable" ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-    cargo doc-upload;
-fi
-
 if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]] && [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
     cargo kcov --print-install-kcov-sh | sh;
 fi

@@ -35,7 +35,6 @@ use rayon::iter::{ParallelIterator, IntoParallelRefMutIterator};
 
 static SHA_FILE: &str = ".files.sha";
 
-#[derive(Clone)]
 pub struct InputPaths {
     path: PathBuf,
     hash: String,
