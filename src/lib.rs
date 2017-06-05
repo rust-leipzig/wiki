@@ -12,6 +12,7 @@ extern crate mowl;
 #[macro_use]
 extern crate error_chain;
 extern crate uuid;
+extern crate rayon;
 
 pub mod error;
 pub mod filehash;
@@ -30,9 +31,12 @@ use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use std::io::prelude::*;
 use std::str;
 use filehash::Filehash;
+use std::ops::Deref;
+use rayon::iter::{ParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator};
 
 static SHA_FILE: &str = ".files.sha";
 
+#[derive(Clone)]
 pub struct InputPaths {
     path: PathBuf,
     hash: String,
@@ -44,6 +48,72 @@ impl InputPaths {
             path: PathBuf::from(path),
             hash: String::new(),
         }
+    }
+
+    fn parse_as_html(&mut self,
+                     input_root_dir: &str,
+                     output_dir: &str,
+                     sha_file: &str) -> Result<PathBuf> {
+
+        // Open the file and read its content
+        let mut f = File::open(&self.path)?;
+        let mut buffer = String::new();
+        f.read_to_string(&mut buffer)?;
+
+        // Creating the related HTML file in output_directory
+        match self.path.to_str() {
+            Some(file_str) => {
+                // Get canonical normal forms of the input path and the recursively
+                // searched directories
+                let file_buf_n = canonicalize(&PathBuf::from(file_str))?;
+                let file_str_n = file_buf_n.to_str()
+                                    .ok_or_else(|| "Unable to stringify canonical normal form of md-file.")?;
+                let input_root_buf_n = canonicalize(&PathBuf::from(input_root_dir))?;
+                let mut input_root_str_n = String::from(
+                    input_root_buf_n.to_str()
+                    .ok_or_else(|| "Unable to stringify canonical normal form of input root.")?
+                );
+
+                // Add native seperator to avoid getting the wrong path
+                input_root_str_n.push(MAIN_SEPARATOR);
+
+                // Reduce the input dir and replace the extension
+                let output_str = String::from(file_str_n)
+                    .replace(input_root_str_n.as_str(), "")
+                    .replace(".md", ".html");
+                let output_path = Path::new(output_str.as_str());
+
+                match output_path.parent() {
+                    Some(parent) => {
+                        // Creating folder structure if neccessary
+                        let parent_path = Path::new(output_dir)
+                            .join(parent.to_str().unwrap_or("."));
+                        create_dir_all(parent_path)?;
+                    },
+                    None => bail!("Can't get output path parent."),
+                }
+
+                match Filehash::check_hash_currency(sha_file, file_str) {
+                    Ok(hash) => {
+                        // File hash is up to date, no need to rebuild
+                        self.hash = hash;
+                        debug!("File '{}' hash up to date.", file_str);
+                    },
+                    Err(hash) => {
+                        // Creating the ouput HTML file
+                        self.hash = hash.to_string();
+                        info!("Parsing file: {}", file_str);
+                        let output_file_path = PathBuf::from(&output_dir)
+                                                    .join(output_path);
+                        let mut output_file = File::create(&output_file_path)?;
+                        output_file.write_all(to_html(&buffer).as_bytes())?;
+                    },
+                }
+                return Ok(output_path.to_path_buf());
+            },
+            None => bail!("Can not stringfy file path"),
+        }
+        Err(Error::from("nope"))
     }
 }
 
@@ -118,67 +188,13 @@ impl Wiki {
                            .ok_or_else(|| "Unable to stringify the sha file path.")?;
 
         // Iterate over all available input_paths
-        for file in &mut self.input_paths {
-
-            // Open the file and read its content
-            let mut f = File::open(&file.path)?;
-            let mut buffer = String::new();
-            f.read_to_string(&mut buffer)?;
-
-            // Creating the related HTML file in output_directory
-            match file.path.to_str() {
-                Some(file_str) => {
-                    // Get canonical normal forms of the input path and the recursively
-                    // searched directories
-                    let file_buf_n = canonicalize(&PathBuf::from(file_str))?;
-                    let file_str_n = file_buf_n.to_str()
-                                     .ok_or_else(|| "Unable to stringify canonical normal form of md-file.")?;
-                    let input_root_buf_n = canonicalize(&PathBuf::from(input_root_dir))?;
-                    let mut input_root_str_n = String::from(
-                        input_root_buf_n.to_str()
-                        .ok_or_else(|| "Unable to stringify canonical normal form of input root.")?
-                    );
-
-                    // Add native seperator to avoid getting the wrong path
-                    input_root_str_n.push(MAIN_SEPARATOR);
-
-                    // Reduce the input dir and replace the extension
-                    let output_str = String::from(file_str_n)
-                        .replace(input_root_str_n.as_str(), "")
-                        .replace(".md", ".html");
-                    let output_path = Path::new(output_str.as_str());
-
-                    match output_path.parent() {
-                        Some(parent) => {
-                            // Creating folder structure if neccessary
-                            let parent_path = Path::new(output_directory)
-                                .join(parent.to_str().unwrap_or("."));
-                            create_dir_all(parent_path)?;
-                        },
-                        None => bail!("Can't get output path parent."),
-                    }
-
-                    match Filehash::check_hash_currency(sha_file, file_str) {
-                        Ok(hash) => {
-                            // File hash is up to date, no need to rebuild
-                            file.hash = hash;
-                            debug!("File '{}' hash up to date.", file_str);
-                        },
-                        Err(hash) => {
-                            // Creating the ouput HTML file
-                            file.hash = hash.to_string();
-                            info!("Parsing file: {}", file_str);
-                            let output_file_path = PathBuf::from(&output_directory)
-                                                       .join(output_path);
-                            let mut output_file = File::create(&output_file_path)?;
-                            output_file.write_all(to_html(&buffer).as_bytes())?;
-                        },
-                    }
-                    self.output_paths.push(output_path.to_path_buf());
-                },
-                None => bail!("Can not stringfy file path"),
-            }
-        }
+        self.output_paths = self.input_paths.par_iter_mut()
+                                            .filter_map(|ref mut file|
+                                                        file.parse_as_html(input_root_dir,
+                                                                           output_directory,
+                                                                           sha_file)
+                                                        .ok())
+                                            .collect();
 
         Filehash::write_file_hash(&mut self.input_paths, sha_file)?;
 
