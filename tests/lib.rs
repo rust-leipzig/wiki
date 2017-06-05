@@ -71,6 +71,6 @@ fn test_read_non_existing_content() {
     assert!(fs::remove_dir_all(TMP_DIR).is_ok());
     match wiki.read_content_from_current_paths(TMP_DIR, NON_EXISTING_DIR) {
         Ok(_) => panic!("`read_content_from_current_paths` returned ok, but should fail."),
-        Err(_) => assert!(fs::remove_dir_all(NON_EXISTING_DIR).is_ok())
+        Err(_) => assert!(!Path::new(NON_EXISTING_DIR).exists())
     }
 }
