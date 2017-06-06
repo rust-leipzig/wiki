@@ -23,4 +23,5 @@ iron = "0"
 log = "0"
 markdown = "0"
 mowl = "1"
+rayon = "0"
 uuid = { version = "0.5", features = ["v5"] }
