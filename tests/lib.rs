@@ -24,7 +24,15 @@ fn test_read_from_directory() {
     assert!(wiki.read_content_from_current_paths(input_dir, "html").is_ok());
     assert!(sha_file.exists());
     assert!(Path::new("html").exists());
+    println!("The following paths were found:");
+    wiki.list_current_input_paths();
+    let index_file = Path::new("html").join("index.html");
+    if index_file.exists() {
+        assert!(fs::remove_file(&index_file).is_ok());
+    }
+    assert!(wiki.create_index_tree("html").is_ok());
     let check_paths = vec![
+        "html/index.html",
         "html/code.html",
         "html/example1.html",
         "html/subsection/test_s1.html",
@@ -35,14 +43,6 @@ fn test_read_from_directory() {
     for path in check_paths {
         assert!(Path::new(path).exists());
     }
-    println!("The following paths were found:");
-    wiki.list_current_input_paths();
-    let index_file = Path::new("html").join("index.html");
-    if index_file.exists() {
-        assert!(fs::remove_file(&index_file).is_ok());
-    }
-    assert!(wiki.create_index_tree("html").is_ok());
-    assert!(index_file.exists());
 }
 
 #[test]
