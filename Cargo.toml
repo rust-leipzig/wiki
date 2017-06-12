@@ -22,3 +22,4 @@ clap = { version = "2", features = ["yaml"] }
 log = "0"
 mowl = "1"
 iron = "0"
+lazy_static = "*"
