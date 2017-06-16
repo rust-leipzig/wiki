@@ -1,5 +1,3 @@
- //! The lib for markdown based static HTML wiki generation
-
 #[macro_use]
 extern crate log;
 extern crate glob;
@@ -30,17 +28,17 @@ use std::io::prelude::*;
 use std::str;
 
 lazy_static! {
-    static ref PDF_MIME: Mime = "application/pdf".parse().unwrap();
-    static ref DOC_MIME: Mime = "application/msword".parse().unwrap();
-    static ref ODA_MIME: Mime = "application/oda".parse().unwrap();
-    static ref ZIP_MIME: Mime = "application/zip".parse().unwrap();
-    static ref WAV_MIME: Mime = "application/wav".parse().unwrap();
-    static ref CSS_MIME: Mime = "application/css".parse().unwrap();
-    static ref GIF_MIME: Mime = "application/gif".parse().unwrap();
-    static ref MPG_MIME: Mime = "application/x-msvideo".parse().unwrap();
-    static ref AVI_MIME: Mime = "application/avi".parse().unwrap();
-    static ref PNG_MIME: Mime = "application/png".parse().unwrap();
-    static ref JPG_MIME: Mime = "application/jpeg".parse().unwrap();
+    static ref PDF_MIME: Mime = "application/pdf".parse::<Mime>().unwrap();
+    static ref DOC_MIME: Mime = "application/msword".parse::<Mime>().unwrap();
+    static ref ODA_MIME: Mime = "application/oda".parse::<Mime>().unwrap();
+    static ref ZIP_MIME: Mime = "application/zip".parse::<Mime>().unwrap();
+    static ref WAV_MIME: Mime = "application/wav".parse::<Mime>().unwrap();
+    static ref CSS_MIME: Mime = "application/css".parse::<Mime>().unwrap();
+    static ref GIF_MIME: Mime = "application/gif".parse::<Mime>().unwrap();
+    static ref MPG_MIME: Mime = "application/x-msvideo".parse::<Mime>().unwrap();
+    static ref AVI_MIME: Mime = "application/avi".parse::<Mime>().unwrap();
+    static ref PNG_MIME: Mime = "application/png".parse::<Mime>().unwrap();
+    static ref JPG_MIME: Mime = "application/jpeg".parse::<Mime>().unwrap();
 }
 
 #[derive(Default)]
@@ -156,23 +154,28 @@ impl Wiki {
 
         Ok(())
     }
+
     /// Add a directory for storing files to the generated html sites or read stored
     /// files of existing filestorage. Afterwards file links will be added to the
     /// generated html site.
     pub fn read_files(&mut self, file_folder: &str, output: &str) -> Result<()> {
+
         //create the default file path
         let output_path = PathBuf::from(output);
         let file_directory = PathBuf::from(output).join(file_folder);
+
         if !Path::new(file_folder).exists(){
             info!("Creating directory for file input: {:?}.", file_directory.to_str());
-            fs::create_dir(&file_directory);
+                   fs::create_dir(&file_directory);
         }
+
         for path in &self.paths{
             let mut count = 0;
 
             //create the path for the html site or just find it
-            let page_files_path = file_directory.join(path).to_str().ok_or_else(|| "Couldn't create Path to html file!")?
-                                  .replace(".md","");
+            let page_files_path = file_directory.join(path).to_str().ok_or_else(||
+                                  "Couldn't create Path to html file!")?.replace(".md","");
+
             if !PathBuf::from(page_files_path.as_str()).exists(){
                 info!("Creating directory for {}'s files: {}.", path.to_str().ok_or_else(|| "Path not found!")?,
                                                                 page_files_path.as_str());
@@ -193,16 +196,16 @@ impl Wiki {
 
                 let link = format!(
                     "\n<a href='http://localhost:30000/files/{}/{}'>{}</a><br>\n",
-                                path.to_str().ok_or_else(|| "Path not found!")?.replace(".md", ""),
+                    path.to_str().ok_or_else(|| "Path not found!")?.replace(".md", ""),
                     current_entry.file_name().to_str().ok_or_else(|| "Entry is corrupted!")?.replace("\n","."),
                     current_entry.file_name().to_str().ok_or_else(|| "Entry is corrupted!")?
                 );
                 self.file_paths.push(
                     (Path::new(current_entry.file_name().to_str()
-                                .ok_or_else(|| "Entry is corrupted!")?).to_owned(),
+                                            .ok_or_else(|| "Entry is corrupted!")?).to_owned(),
                     Path::new(path.to_str()
-                                .ok_or_else(|| "Entry is corrupted!")?.replace(".md", "")
-                                .as_str()).to_owned())
+                                  .ok_or_else(|| "Entry is corrupted!")?.replace(".md", "")
+                                  .as_str()).to_owned())
                 );
                 let mut html_file = OpenOptions::new().read(true).write(true).create(true).
                     open(output_path.join(path).to_str().ok_or_else(|| "Entry is corrupted!")?.
@@ -212,16 +215,16 @@ impl Wiki {
 
                 html_file.read_to_string(&mut buffer);
                 buffer += &link.as_str();
-                info!("Creating link to {:?} for {:?}", current_entry.file_name(), path.to_str().
-                                ok_or_else(|| "Entry is corrupted!")?.replace(".md", ".html"));
+                info!("Creating link to {:?} for {:?}", current_entry.file_name(), path.to_str()
+                      .ok_or_else(|| "Entry is corrupted!")?.replace(".md", ".html"));
                 html_file.write((&buffer).as_bytes());
                 count += 1;
             }
             //check if there are no files attached
             if count == 0 {
                 info!("No files found so far for {}. Simply add your
-                    files to the folders in 'files'.",
-                    path.to_str().ok_or_else(|| "Entry is corrupted!")?)
+                       files to the folders in 'files'.",
+                       path.to_str().ok_or_else(|| "Entry is corrupted!")?)
             }
         }
         Ok(())
@@ -229,6 +232,7 @@ impl Wiki {
 
     /// Create an HTTP server serving the generated files
     pub fn serve(&self, output_directory: &str) -> Result<()> {
+
         // Create a default listening address
         let addr = "localhost:30000";
         info!("Listening on {}", addr);
