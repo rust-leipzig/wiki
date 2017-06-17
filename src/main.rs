@@ -60,9 +60,10 @@ fn run() -> Result<()> {
 
     wiki.init_logging(log_level)?;
     wiki.read_from_directory(input_directory)?;
-    wiki.list_current_paths();
     wiki.read_content_from_current_paths(input_directory, output_directory)?;
     wiki.read_files(file_directory, output_directory);
+    wiki.create_index_tree(output_directory)?;
+
     if enable_httpd {
         wiki.serve(output_directory)?;
     }
