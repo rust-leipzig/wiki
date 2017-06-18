@@ -49,9 +49,9 @@ impl InputPaths {
     }
 
     fn parse_as_html<'a, P: Into<&'a PathBuf>>(&mut self,
-                                      input_root_dir: &str,
-                                      output_dir: &str,
-                                      sha_file: P) -> Result<PathBuf> {
+                                               input_root_dir: &str,
+                                               output_dir: &str,
+                                               sha_file: P) -> Result<PathBuf> {
 
         // Open the file and read its content
         let mut f = File::open(&self.path)?;
@@ -65,11 +65,11 @@ impl InputPaths {
                 // searched directories
                 let file_buf_n = canonicalize(&PathBuf::from(file_str))?;
                 let file_str_n = file_buf_n.to_str()
-                                    .ok_or_else(|| "Unable to stringify canonical normal form of md-file.")?;
+                                           .ok_or_else(|| "Unable to stringify canonical normal form of md-file.")?;
                 let input_root_buf_n = canonicalize(&PathBuf::from(input_root_dir))?;
                 let mut input_root_str_n = String::from(
                     input_root_buf_n.to_str()
-                    .ok_or_else(|| "Unable to stringify canonical normal form of input root.")?
+                                    .ok_or_else(|| "Unable to stringify canonical normal form of input root.")?
                 );
 
                 // Add native seperator to avoid getting the wrong path
@@ -85,7 +85,8 @@ impl InputPaths {
                     Some(parent) => {
                         // Creating folder structure if neccessary
                         let parent_path = Path::new(output_dir)
-                            .join(parent.to_str().unwrap_or("."));
+                            .join(parent.to_str()
+                                        .unwrap_or("."));
                         create_dir_all(parent_path)?;
                     },
                     None => bail!("Can't get output path parent."),
@@ -107,7 +108,7 @@ impl InputPaths {
                         output_file.write_all(to_html(&buffer).as_bytes())?;
                     },
                 }
-                return Ok(output_path.to_path_buf());
+                Ok(output_path.to_path_buf())
             },
             None => bail!("Can not stringfy file path"),
         }
@@ -214,8 +215,8 @@ impl Wiki {
                                                       .ok_or_else(|| "Unable to stringify output path.")?,
                                            output_path.file_name()
                                                       .ok_or_else(|| "Unable to extract file name for path")?
-                                                          .to_str()
-                                                          .ok_or_else(|| "Unable to stringify output path.")?)
+                                                      .to_str()
+                                                      .ok_or_else(|| "Unable to stringify output path.")?)
                                    .as_str());
             }
             index_file.write_all(index_str.as_bytes())?;
