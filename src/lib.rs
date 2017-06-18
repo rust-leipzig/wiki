@@ -41,17 +41,17 @@ pub struct InputPaths {
 }
 
 impl InputPaths {
-    fn new(path: &str) -> Self {
+    fn new<P: Into<PathBuf>>(path: P) -> Self {
         InputPaths {
-            path: PathBuf::from(path),
+            path: path.into(),
             hash: String::new(),
         }
     }
 
-    fn parse_as_html(&mut self,
-                     input_root_dir: &str,
-                     output_dir: &str,
-                     sha_file: &str) -> Result<PathBuf> {
+    fn parse_as_html<'a, P: Into<&'a PathBuf>>(&mut self,
+                                      input_root_dir: &str,
+                                      output_dir: &str,
+                                      sha_file: P) -> Result<PathBuf> {
 
         // Open the file and read its content
         let mut f = File::open(&self.path)?;
@@ -91,7 +91,7 @@ impl InputPaths {
                     None => bail!("Can't get output path parent."),
                 }
 
-                match Filehash::check_hash_currency(sha_file, file_str) {
+                match Filehash::check_hash_currency(sha_file.into(), file_str) {
                     Ok(hash) => {
                         // File hash is up to date, no need to rebuild
                         self.hash = hash;
@@ -143,20 +143,19 @@ impl Wiki {
     /// Reads all markdown files recursively from a given directory.
     /// Clears the current available input_paths
     pub fn read_from_directory(&mut self, directory: &str) -> Result<()> {
-        /// Remove all input_paths
+        // Remove all input_paths
         self.input_paths.clear();
 
-        /// Gather new content
+        // Gather new content
         let md_path = PathBuf::from(&directory).join("**").join("*.md");
         if !Path::new(&directory).is_dir() {
             bail!("The path '{}' does not exist", directory);
         }
 
-        /// Use the current working directory as a fallback
+        // Use the current working directory as a fallback
         for entry in glob(md_path.to_str().unwrap_or("."))? {
             self.input_paths.push(
-                InputPaths::new(entry?.to_str()
-                                    .ok_or_else(|| "Unable to stringfy entry in markdown path.")?));
+                InputPaths::new(entry?));
         }
 
         Ok(())
@@ -185,19 +184,18 @@ impl Wiki {
         }
 
         let sha_file_path = PathBuf::from(output_directory).join(SHA_FILE);
-        let sha_file = sha_file_path.to_str()
-                           .ok_or_else(|| "Unable to stringify the sha file path.")?;
+        let sha_file = sha_file_path;
 
         // Iterate over all available input_paths
         self.output_paths = self.input_paths.par_iter_mut()
                                             .filter_map(|ref mut file|
                                                         file.parse_as_html(input_root_dir,
                                                                            output_directory,
-                                                                           sha_file)
+                                                                           &sha_file)
                                                         .ok())
                                             .collect();
 
-        Filehash::write_file_hash(&mut self.input_paths, sha_file)?;
+        Filehash::write_file_hash(&mut self.input_paths, &sha_file)?;
 
         Ok(())
     }
@@ -213,10 +211,11 @@ impl Wiki {
             for output_path in &self.output_paths {
                 index_str.push_str(format!("<li><a href=\"{}\">{}</a></li>\n",
                                            output_path.to_str()
-                                               .ok_or_else(|| "Unable to stringify output path.")?,
+                                                      .ok_or_else(|| "Unable to stringify output path.")?,
                                            output_path.file_name()
-                                               .ok_or_else(|| "Unable to extract file name for path")?
-                                               .to_str().ok_or_else(|| "Unable to stringify output path.")?)
+                                                      .ok_or_else(|| "Unable to extract file name for path")?
+                                                          .to_str()
+                                                          .ok_or_else(|| "Unable to stringify output path.")?)
                                    .as_str());
             }
             index_file.write_all(index_str.as_bytes())?;
@@ -268,7 +267,9 @@ impl Wiki {
 
                 // Content type needs to be determined from the file rather
                 // than assuming html
-                Ok(Response::with((ContentType::html().0, status::Ok, buffer)))
+                Ok(Response::with((ContentType::html().0,
+                                   status::Ok,
+                                   buffer)))
 
             }).http(addr)?;
 

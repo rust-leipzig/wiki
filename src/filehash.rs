@@ -3,7 +3,7 @@
 use InputPaths;
 use error::*;
 use std::fs::{self, File};
-use std::path::Path;
+use std::path::PathBuf;
 use std::io::{Write, Read, BufReader, BufRead};
 use uuid::{Uuid, NAMESPACE_DNS};
 
@@ -11,8 +11,8 @@ pub struct Filehash;
 
 impl Filehash {
     /// Reads the file hash for the file specified by `file_str` out of `hash_file_str`
-    fn read_file_hash(hash_file_str: &str, file_str: &str) -> Option<String> {
-        if let Ok(hash_file_res) = File::open(hash_file_str) {
+    fn read_file_hash<'a>(hash_file: &'a PathBuf, file_str: &str) -> Option<String> {
+        if let Ok(hash_file_res) = File::open(hash_file) {
             let hash_file_reader = BufReader::new(hash_file_res);
             for line in hash_file_reader.lines() {
                 if let Ok(l) = line {
@@ -35,9 +35,13 @@ impl Filehash {
     }
 
     /// Writes all input files and their hashes into the file `hash_file_str`
-    pub fn write_file_hash(input_paths: &mut Vec<InputPaths>, hash_file_str: &str) -> Result<()> {
+    pub fn write_file_hash<P: Into<PathBuf>>(input_paths: &mut Vec<InputPaths>,
+                                             hash_file: P) -> Result<()> {
         // Renew the hash_file
-        if Path::new(hash_file_str).exists() {
+        let hash_file_pb = hash_file.into();
+        let hash_file_str = hash_file_pb.to_str()
+                                        .ok_or_else(|| "Unable to stringfy hash file path.")?;
+        if hash_file_pb.exists() {
             fs::remove_file(hash_file_str)?;
         }
         let mut hash_file = File::create(hash_file_str)?;
@@ -48,7 +52,7 @@ impl Filehash {
             hash_file_content.push_str(format!("{}:{}\n",
                                                input_path.hash.as_str(),
                                                input_path.path.to_str()
-                                               .ok_or_else(|| "Unable to stringfy input path.")?)
+                                                              .ok_or_else(|| "Unable to stringfy input path.")?)
                                        .as_str());
         }
         hash_file.write_all(hash_file_content.as_bytes())?;
@@ -57,7 +61,7 @@ impl Filehash {
     }
 
     /// Calculate the hash of the given `file_str`
-    fn get_file_hash(file_str: &str) -> Result<(String)> {
+    fn get_file_hash(file_str: &str) -> Result<String> {
         let mut buffer = String::new();
         let mut file_instance = File::open(file_str)?;
 
@@ -71,10 +75,11 @@ impl Filehash {
 
     /// Checks whether the calculated hash of `file_str` is equal to the hash stored
     /// in the file `hash_file_str`
-    pub fn check_hash_currency(hash_file_str: &str, file_str: &str) -> Result<String> {
+    pub fn check_hash_currency<'a, P: Into<&'a PathBuf>>(hash_file: P,
+                                                         file_str: &str) -> Result<String> {
         debug!("Check hash currency of '{}'", file_str);
         let current_file_hash = Filehash::get_file_hash(file_str)?;
-        match Filehash::read_file_hash(hash_file_str, file_str) {
+        match Filehash::read_file_hash(hash_file.into(), file_str) {
             Some(stored_file_hash) => {
                 // Stored file hash was found
                 debug!("Extracted file hash:  {}", stored_file_hash);
