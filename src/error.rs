@@ -2,7 +2,7 @@
 
 use std::io;
 use glob;
-use iron::error::HttpError;
+use iron::error::{HttpError, IronError};
 
 error_chain! {
     foreign_links {

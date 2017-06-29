@@ -52,12 +52,16 @@ fn run() -> Result<()> {
 
     let enable_httpd = matches.is_present("www");
 
+    let file_directory = matches.value_of("file_directory")
+        .ok_or_else(|| "CLI parameter 'file_directory' missing")?;
+
     // Do first processing steps
     let mut wiki = Wiki::new();
 
     wiki.init_logging(log_level)?;
     wiki.read_from_directory(input_directory)?;
     wiki.read_content_from_current_paths(input_directory, output_directory)?;
+    wiki.read_files(file_directory, output_directory);
     wiki.create_index_tree(output_directory)?;
 
     if enable_httpd {
