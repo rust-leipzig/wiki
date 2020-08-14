@@ -22,7 +22,7 @@ glob = "0"
 iron = "0"
 log = "0"
 markdown = "0"
-mowl = "1"
+mowl = "2"
 lazy_static = "*"
 rayon = "0"
 uuid = { version = "0.5", features = ["v5"] }

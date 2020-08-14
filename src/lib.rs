@@ -21,7 +21,7 @@ pub mod filehash;
 
 use error::*;
 use glob::glob;
-use log::LogLevel;
+use log::LevelFilter;
 use markdown::to_html;
 
 use iron::prelude::*;
@@ -147,7 +147,7 @@ impl Wiki {
     }
 
     /// Creates a new instance of the processing lib
-    pub fn init_logging(&mut self, level: LogLevel) -> Result<()> {
+    pub fn init_logging(&mut self, level: LevelFilter) -> Result<()> {
         // Init logger crate
         match mowl::init_with_level(level) {
             Ok(_) => info!("Log level set to: {}", level),

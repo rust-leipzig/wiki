@@ -17,7 +17,7 @@ use wikilib::Wiki;
 use wikilib::error::*;
 
 use clap::App;
-use log::LogLevel;
+use log::LevelFilter;
 
 use std::process::exit;
 
@@ -37,9 +37,9 @@ fn run() -> Result<()> {
 
     // Set the verbosity level
     let log_level = match matches.occurrences_of("verbose") {
-        0 => LogLevel::Info, // Default value
-        1 => LogLevel::Debug,
-        _ => LogLevel::Trace,
+        0 => LevelFilter::Info, // Default value
+        1 => LevelFilter::Debug,
+        _ => LevelFilter::Trace,
     };
 
     // Get the input directory
