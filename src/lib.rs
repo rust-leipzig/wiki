@@ -1,7 +1,6 @@
 //! The lib for markdown based static HTML wiki generation
 
-#![cfg_attr(feature="clippy", feature(plugin))]
-#![cfg_attr(feature="clippy", plugin(clippy))]
+#![cfg_attr(feature="cargo-clippy")]
 
 #[macro_use]
 extern crate log;
