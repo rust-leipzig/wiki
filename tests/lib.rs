@@ -2,7 +2,7 @@ extern crate log;
 extern crate wikilib;
 extern crate glob;
 
-use log::LogLevel;
+use log::LevelFilter;
 use wikilib::Wiki;
 
 use std::path::Path;
@@ -14,7 +14,7 @@ static TMP_DIR: &str = "_tmp_dir_";
 #[test]
 fn test_read_from_directory() {
     let mut wiki = Wiki::new();
-    assert!(wiki.init_logging(LogLevel::Trace).is_ok());
+    assert!(wiki.init_logging(LevelFilter::Trace).is_ok());
     let input_dir = "tests/example_md/real_md";
     assert!(wiki.read_from_directory(input_dir).is_ok());
     let sha_file = Path::new("html").join(".files.sha");
