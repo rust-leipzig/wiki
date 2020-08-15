@@ -1,8 +1,7 @@
 extern crate wikilib;
 
-use wikilib::error::*;
-use std::error::Error as StdError;
 use std::io;
+use wikilib::error::*;
 
 static ERROR_STR: &str = "Something went wrong here.";
 

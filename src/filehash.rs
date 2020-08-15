@@ -1,11 +1,11 @@
 //! Everything related to wikis filehash functionality
 
-use InputPaths;
 use error::*;
 use std::fs::{self, File};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::Path;
-use std::io::{Write, Read, BufReader, BufRead};
 use uuid::{Uuid, NAMESPACE_DNS};
+use InputPaths;
 
 pub struct Filehash;
 
@@ -45,19 +45,25 @@ impl Filehash {
         // Write content into file in form `<hash>:<file>`
         let mut hash_file_content = String::new();
         for input_path in input_paths {
-            hash_file_content.push_str(format!("{}:{}\n",
-                                               input_path.hash.as_str(),
-                                               input_path.path.to_str()
-                                               .ok_or_else(|| "Unable to stringfy input path.")?)
-                                       .as_str());
+            hash_file_content.push_str(
+                format!(
+                    "{}:{}\n",
+                    input_path.hash.as_str(),
+                    input_path
+                        .path
+                        .to_str()
+                        .ok_or_else(|| "Unable to stringfy input path.")?
+                )
+                .as_str(),
+            );
         }
         hash_file.write_all(hash_file_content.as_bytes())?;
 
-        Ok (())
+        Ok(())
     }
 
     /// Calculate the hash of the given `file_str`
-    fn get_file_hash(file_str: &str) -> Result<(String)> {
+    fn get_file_hash(file_str: &str) -> Result<String> {
         let mut buffer = String::new();
         let mut file_instance = File::open(file_str)?;
 
@@ -85,11 +91,11 @@ impl Filehash {
                 } else {
                     Ok(current_file_hash)
                 }
-            },
+            }
             None => {
                 // No stored hash found for this file
                 Err(Error::from(current_file_hash))
-            },
+            }
         }
     }
 }

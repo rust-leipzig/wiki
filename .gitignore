@@ -7,3 +7,7 @@ Session.vim
 *~
 tags
 *.bk
+
+// output dirs/ files
+html
+html2

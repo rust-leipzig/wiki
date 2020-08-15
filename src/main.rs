@@ -13,8 +13,8 @@ extern crate error_chain;
 
 pub mod error;
 
-use wikilib::Wiki;
 use wikilib::error::*;
+use wikilib::Wiki;
 
 use clap::App;
 use log::LevelFilter;
@@ -43,16 +43,19 @@ fn run() -> Result<()> {
     };
 
     // Get the input directory
-    let input_directory = matches.value_of("input_directory")
+    let input_directory = matches
+        .value_of("input_directory")
         .ok_or_else(|| "CLI parameter 'input_directory' missing.")?;
 
     // Get the output directory
-    let output_directory = matches.value_of("output_directory")
+    let output_directory = matches
+        .value_of("output_directory")
         .ok_or_else(|| "CLI parameter 'output_directory' missing.")?;
 
     let enable_httpd = matches.is_present("www");
 
-    let file_directory = matches.value_of("file_directory")
+    let file_directory = matches
+        .value_of("file_directory")
         .ok_or_else(|| "CLI parameter 'file_directory' missing")?;
 
     // Do first processing steps
@@ -61,7 +64,7 @@ fn run() -> Result<()> {
     wiki.init_logging(log_level)?;
     wiki.read_from_directory(input_directory)?;
     wiki.read_content_from_current_paths(input_directory, output_directory)?;
-    wiki.read_files(file_directory, output_directory);
+    wiki.read_files(file_directory, output_directory)?;
     wiki.create_index_tree(output_directory)?;
 
     if enable_httpd {

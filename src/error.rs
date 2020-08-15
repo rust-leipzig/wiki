@@ -1,8 +1,8 @@
 //! Everything related to the wikilib error handling
 
-use std::io;
 use glob;
-use iron::error::{HttpError, IronError};
+use iron::error::HttpError;
+use std::io;
 
 error_chain! {
     foreign_links {

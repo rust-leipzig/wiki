@@ -1,12 +1,12 @@
+extern crate glob;
 extern crate log;
 extern crate wikilib;
-extern crate glob;
 
 use log::LevelFilter;
 use wikilib::Wiki;
 
-use std::path::Path;
 use std::fs;
+use std::path::Path;
 
 static NON_EXISTING_DIR: &str = "_should_not_exist_";
 static TMP_DIR: &str = "_tmp_dir_";
@@ -21,7 +21,9 @@ fn test_read_from_directory() {
     if sha_file.exists() {
         assert!(fs::remove_file(&sha_file).is_ok());
     }
-    assert!(wiki.read_content_from_current_paths(input_dir, "html").is_ok());
+    assert!(wiki
+        .read_content_from_current_paths(input_dir, "html")
+        .is_ok());
     assert!(sha_file.exists());
     assert!(Path::new("html").exists());
     println!("The following paths were found:");
@@ -50,10 +52,14 @@ fn test_sha_file_existing() {
     let mut wiki = Wiki::new();
     let input_dir = "tests/example_md/real_md";
     assert!(wiki.read_from_directory(input_dir).is_ok());
-    assert!(wiki.read_content_from_current_paths(input_dir, "html2").is_ok());
+    assert!(wiki
+        .read_content_from_current_paths(input_dir, "html2")
+        .is_ok());
     let sha_file = Path::new("html2").join(".files.sha");
     assert!(sha_file.exists());
-    assert!(wiki.read_content_from_current_paths(input_dir, "html2").is_ok());
+    assert!(wiki
+        .read_content_from_current_paths(input_dir, "html2")
+        .is_ok());
 }
 
 #[test]
@@ -71,6 +77,6 @@ fn test_read_non_existing_content() {
     assert!(fs::remove_dir_all(TMP_DIR).is_ok());
     match wiki.read_content_from_current_paths(TMP_DIR, NON_EXISTING_DIR) {
         Ok(_) => panic!("`read_content_from_current_paths` returned ok, but should fail."),
-        Err(_) => assert!(!Path::new(NON_EXISTING_DIR).exists())
+        Err(_) => assert!(!Path::new(NON_EXISTING_DIR).exists()),
     }
 }
